@@ -1,4 +1,4 @@
-// 1. CONFIGURACIÓN DE RENDIMIENTOS Y UNIDADES
+// 1. CONFIGURACIÓN
 const CONFIG = {
     'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
     'techos': { n: 'Techos', i: '🏠', uni: 'm²', esM2: true },
@@ -8,12 +8,11 @@ const CONFIG = {
     'horas': { n: 'Horas', i: '⏱️', uni: 'hrs', esM2: false }
 };
 
-// 2. BASE DE DATOS
 let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [], contador: 1 };
 let clienteActual = null;
-let trabajoActual = { lineas: [], estado: 'Pendiente', iva: 21, total: 0, numero: "" };
+let trabajoActual = { lineas: [], estado: 'Pendiente', iva: 21, total: 0, numero: "", lugar: "" };
 
-// 3. FUNCIONES DE GUARDADO
+// 2. GUARDADO Y DASHBOARD
 window.save = function() {
     localStorage.setItem('presupro_v3', JSON.stringify(db));
     window.renderListaClientes();
@@ -28,7 +27,7 @@ window.actualizarDash = function() {
     if(dash) dash.innerText = t.toFixed(2) + "€";
 };
 
-// 4. CLIENTES
+// 3. GESTIÓN DE CLIENTES
 window.nuevoCliente = function() {
     const n = prompt("Nombre del cliente:");
     if(n) {
@@ -49,13 +48,13 @@ window.renderListaClientes = function() {
                 <div class="font-black text-slate-800">${c.nombre}</div>
                 <div class="text-[10px] text-slate-400 uppercase font-bold">${c.presupuestos?.length || 0} Trabajos</div>
             </div>
-            <span class="text-blue-500">→</span>
+            <span class="text-blue-500 font-bold">→</span>
         </div>
     `).join('');
     window.actualizarDash();
 };
 
-// 5. NAVEGACIÓN
+// 4. NAVEGACIÓN
 window.irAPantalla = function(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
     document.getElementById(`pantalla-${id}`).classList.remove('hidden');
@@ -70,7 +69,7 @@ window.cambiarVista = function(v) {
     if(v === 'economico') window.renderPresupuesto();
 };
 
-// 6. MEDICIONES (👷 TÉCNICO)
+// 5. EXPEDIENTE E HISTORIAL (CON DETALLE DE METROS)
 window.abrirExpediente = function(id) { 
     clienteActual = db.clientes.find(c => c.id === id); 
     document.getElementById('titulo-cliente').innerText = clienteActual.nombre; 
@@ -80,24 +79,48 @@ window.abrirExpediente = function(id) {
 
 window.renderHistorial = function() { 
     const archivo = document.getElementById('archivo-presupuestos');
-    if(!archivo) return;
+    if(!archivo || !clienteActual.presupuestos) return;
+    
     archivo.innerHTML = clienteActual.presupuestos.map(p => `
-        <div class="bg-white p-3 rounded-xl border mb-2 flex justify-between italic text-xs">
-            <span class="font-bold">${p.numero}</span>
-            <span class="font-black text-blue-600">${parseFloat(p.total).toFixed(2)}€</span>
-        </div>`).join(''); 
+        <div class="bg-white p-4 rounded-2xl border mb-3 shadow-sm border-l-4 border-l-blue-500">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <div class="text-[9px] font-black text-slate-400 uppercase">${p.fecha || ''} - ${p.numero}</div>
+                    <div class="font-bold text-slate-800 text-sm">${p.lugar || 'Obra sin nombre'}</div>
+                </div>
+                <div class="text-right font-black text-blue-600 text-sm">${parseFloat(p.total).toFixed(2)}€</div>
+            </div>
+            <div class="mt-2 pt-2 border-t border-dashed text-[9px] text-slate-500 grid grid-cols-2 gap-1 italic">
+                ${p.lineas.map(l => `<span>${l.icono} ${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} ${l.nombre}</span>`).join('')}
+            </div>
+        </div>`).reverse().join(''); 
 };
 
+// 6. NUEVA OBRA (CON PREGUNTA DE LUGAR)
 window.iniciarNuevaMedicion = function() {
+    const lugar = prompt("¿Dónde es la obra? (Ej: Barcelona, Casa Manolo...)", "");
+    if (!lugar) return;
+
     const ahora = new Date();
-    const ID_OBRA = ahora.getDate() + "/" + (ahora.getMonth()+1) + "-" + ahora.getHours() + ":" + ahora.getMinutes();
-    trabajoActual = { numero: "OBRA-" + ID_OBRA, lineas: [], estado: 'Pendiente', iva: 21, total: 0 };
-    document.getElementById('num-presu-header').innerText = trabajoActual.numero;
+    const fechaStr = ahora.getDate() + "/" + (ahora.getMonth()+1) + "/" + ahora.getFullYear();
+    
+    trabajoActual = { 
+        numero: "OBRA-" + ahora.getTime().toString().slice(-4), 
+        lugar: lugar,
+        fecha: fechaStr,
+        lineas: [], 
+        estado: 'Pendiente', 
+        iva: 21, 
+        total: 0 
+    };
+    
+    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
     document.getElementById('resumen-medidas-pantalla').innerHTML = "";
     window.cambiarVista('tecnico');
     window.irAPantalla('trabajo');
 };
 
+// 7. MEDICIONES
 window.abrirPrompt = function(tipo) {
     const conf = CONFIG[tipo];
     let cantidad = 0;
@@ -106,7 +129,7 @@ window.abrirPrompt = function(tipo) {
     const precio = parseFloat(pInput) || 0;
     
     if(conf.esM2) {
-        const largoInput = prompt(`${conf.n}: Introduce LARGO (puedes sumar 5+2+3):`, "0");
+        const largoInput = prompt(`${conf.n}: Introduce LARGO (ej: 5+3.2):`, "0");
         const altoInput = prompt("Introduce ALTO o ANCHO:", "0");
         const sumaLargo = largoInput.split('+').reduce((a, b) => a + Number(b || 0), 0);
         cantidad = sumaLargo * (parseFloat(altoInput) || 0);
@@ -123,7 +146,7 @@ window.abrirPrompt = function(tipo) {
 
 window.renderListaMedidas = function() {
     const cont = document.getElementById('resumen-medidas-pantalla');
-    cont.innerHTML = trabajoActual.lineas.map((l, i) => `
+    cont.innerHTML = trabajoActual.lineas.map(l => `
         <div class="flex justify-between items-center bg-white p-3 rounded-xl border mb-2 shadow-sm text-sm">
             <span>${l.icono} <b>${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni}</b> ${l.nombre}</span>
             <span class="font-bold text-blue-600">${(l.cantidad * l.precio).toFixed(2)}€</span>
@@ -131,17 +154,16 @@ window.renderListaMedidas = function() {
     `).join('');
 };
 
-// 7. DESGLOSE ECONÓMICO (💰 DINERO)
+// 8. DESGLOSE ECONÓMICO FINAL
 window.renderPresupuesto = function() {
     let subtotal = 0;
-    const fecha = new Date().toLocaleDateString();
     let h = `
         <div class="border-b pb-2 mb-4">
             <div class="flex justify-between text-[9px] font-black text-slate-400 uppercase">
-                <span>FECHA: ${fecha}</span>
+                <span>FECHA: ${trabajoActual.fecha}</span>
                 <span>ID: ${trabajoActual.numero}</span>
             </div>
-            <h3 class="font-black text-slate-800 text-sm">DESGLOSE PARA CLIENTE</h3>
+            <h3 class="font-black text-slate-800 text-sm">OBRA: ${trabajoActual.lugar.toUpperCase()}</h3>
         </div>
     `;
 
