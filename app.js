@@ -1,145 +1,243 @@
 const CONFIG = {
-    'tabiques': { n: 'Tabiques', i: '🧱', esM2: true },
-    'techos': { n: 'Techos', i: '🏠', esM2: true },
-    'cajones': { n: 'Cajones', i: '📦', esM2: false },
-    'tabicas': { n: 'Tabicas', i: '📐', esM2: false },
-    'cantoneras': { n: 'Cantoneras', i: '📏', esM2: false },
-    'horas': { n: 'Horas', i: '⏱️', esM2: false },
-    'placa13': { n: 'Placa 13', i: '📄', esM2: false },
-    'montante48': { n: 'Montante 48', i: '🏗️', esM2: false },
-    'montante70': { n: 'Montante 70', i: '🏗️', esM2: false },
-    'canal48': { n: 'Canal 48', i: '🛤️', esM2: false },
-    'canal70': { n: 'Canal 70', i: '🛤️', esM2: false },
-    'tc48': { n: 'TC 48', i: '📏', esM2: false }
+    'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
+    'techos': { n: 'Techos', i: '🏠', uni: 'm²', esM2: true },
+    'cajones': { n: 'Cajones', i: '📦', uni: 'm²', esM2: true },
+    'tabicas': { n: 'Tabicas', i: '📐', uni: 'm²', esM2: true },
+    'cantoneras': { n: 'Cantoneras', i: '📏', uni: 'ml', esM2: false },
+    'horas': { n: 'Horas', i: '⏱️', uni: 'hrs', esM2: false }
 };
 
 let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [] };
 let clienteActual = null;
-let trabajoActual = { lineas: [] };
+let trabajoActual = { lineas: [], iva: 21, total: 0, lugar: "", fecha: "" };
+let editandoIndex = null;
 
-function irAPantalla(id) {
-    document.getElementById('pantalla-clientes').classList.add('hidden');
-    document.getElementById('pantalla-expediente').classList.add('hidden');
-    document.getElementById('pantalla-trabajo').classList.add('hidden');
-    document.getElementById('pantalla-' + id).classList.remove('hidden');
-    if(id === 'clientes') renderListaClientes();
-}
+window.irAPantalla = function(id) {
+    document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
+    const p = document.getElementById(`pantalla-${id}`);
+    if(p) p.classList.remove('hidden');
+    if(id === 'clientes') window.renderListaClientes();
+};
 
-function renderListaClientes() {
-    const cont = document.getElementById('lista-clientes');
-    cont.innerHTML = db.clientes.map(c => `
-        <div class="bg-white p-4 rounded shadow mb-3 flex justify-between items-center">
-            <div onclick="abrirExpediente(${c.id})" class="flex-1 font-bold uppercase cursor-pointer">${c.nombre}</div>
-            <button onclick="borrarCliente(${c.id})" class="text-red-500 ml-4">🗑️</button>
-        </div>
-    `).join('');
-}
+window.cambiarVista = function(v) {
+    document.querySelectorAll('.vista-trabajo').forEach(div => div.classList.add('hidden'));
+    const target = document.getElementById(`vista-${v}`);
+    if(target) target.classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+    const tab = document.getElementById(`tab-${v}`);
+    if(tab) tab.classList.add('tab-active');
+    
+    if(v === 'economico') window.renderPresupuesto();
+    if(v === 'tecnico') window.renderListaMedidas();
+};
 
-function abrirExpediente(id) {
-    clienteActual = db.clientes.find(c => c.id === id);
-    document.getElementById('titulo-cliente').innerText = clienteActual.nombre.toUpperCase();
-    renderHistorial();
-    irAPantalla('expediente');
-}
-
-function nuevoCliente() {
-    const n = prompt("Nombre del cliente:");
+window.nuevoCliente = function() {
+    const n = prompt("Nombre del Cliente:");
     if(!n) return;
-    db.clientes.push({ id: Date.now(), nombre: n, presupuestos: [] });
-    save();
-    renderListaClientes();
-}
+    const f = prompt("CIF/DNI:");
+    const d = prompt("Dirección:");
+    const c = prompt("Ciudad/Provincia:");
+    db.clientes.push({
+        id: Date.now(), nombre: n, fiscal: f || "", direccion: d || "", ciudad: c || "", presupuestos: []
+    });
+    window.save();
+};
 
-function borrarCliente(id) {
-    if(confirm("¿Borrar cliente?")) {
-        db.clientes = db.clientes.filter(c => c.id !== id);
-        save();
-        renderListaClientes();
-    }
-}
-
-function iniciarNuevaMedicion() {
-    const l = prompt("Lugar de la obra:");
-    if(!l) return;
-    trabajoActual = { lugar: l, fecha: new Date().toLocaleDateString(), lineas: [], total: 0 };
-    document.getElementById('num-presu-header').innerText = l.toUpperCase();
-    document.getElementById('resumen-medidas-pantalla').innerHTML = "";
-    irAPantalla('trabajo');
-    cambiarVista('tecnico');
-}
-
-function abrirPrompt(tipo) {
-    const conf = CONFIG[tipo];
-    const precio = parseFloat(prompt("Precio unidad/m2:", "0")) || 0;
-    let cant = 0;
-    if(conf.esM2) {
-        const largo = (prompt("Largo:") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-        const alto = parseFloat(prompt("Alto:")) || 0;
-        cant = largo * alto;
-    } else {
-        cant = parseFloat(prompt("Cantidad:")) || 0;
-    }
-    if(cant > 0) {
-        trabajoActual.lineas.push({ nombre: conf.n, icono: conf.i, cantidad: cant, precio: precio });
-        renderListaMedidas();
-    }
-}
-
-function renderListaMedidas() {
-    const cont = document.getElementById('resumen-medidas-pantalla');
-    cont.innerHTML = trabajoActual.lineas.map((l, i) => `
-        <div class="bg-white p-2 border-b flex justify-between text-sm">
-            <span>${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)}</span>
-            <button onclick="quitarLinea(${i})" class="text-red-500">✕</button>
+window.renderListaClientes = function() {
+    const cont = document.getElementById('lista-clientes');
+    if(!cont) return;
+    cont.innerHTML = db.clientes.map(c => `
+        <div onclick="window.abrirExpediente(${c.id})" class="bg-white p-5 rounded-3xl border mb-3 shadow-sm flex justify-between items-center active:scale-95 transition-transform">
+            <div>
+                <div class="font-black text-slate-800 text-lg uppercase leading-tight">${c.nombre}</div>
+                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">${c.ciudad || 'Sin ciudad'}</div>
+            </div>
+            <button onclick="window.borrarCliente(${c.id}, event)" class="bg-red-50 text-red-500 p-3 rounded-2xl">🗑️</button>
         </div>
     `).join('');
-}
+};
 
-function quitarLinea(i) {
+window.borrarCliente = function(id, event) {
+    event.stopPropagation();
+    if(confirm("¿Borrar cliente y todo su historial?")) {
+        db.clientes = db.clientes.filter(c => c.id !== id);
+        window.save();
+    }
+};
+
+window.abrirExpediente = function(id) { 
+    clienteActual = db.clientes.find(c => c.id === id); 
+    if(!clienteActual) return;
+    const tituloHtml = `
+        <div class="text-blue-600 font-black text-2xl uppercase tracking-tighter leading-none">Presupuesto</div>
+        <div class="text-slate-800 font-bold text-xs mt-1 uppercase">${clienteActual.nombre}</div>
+        <div class="text-[9px] text-slate-400 font-normal">
+            ${clienteActual.fiscal} | ${clienteActual.direccion}
+        </div>
+    `;
+    document.getElementById('titulo-cliente').innerHTML = tituloHtml; 
+    window.renderHistorial(); 
+    window.irAPantalla('expediente'); 
+};
+
+window.renderHistorial = function() { 
+    const archivo = document.getElementById('archivo-presupuestos');
+    if(!archivo) return;
+    archivo.innerHTML = (clienteActual.presupuestos || []).map((p, index) => `
+        <div class="bg-white p-5 rounded-3xl border mb-4 shadow-sm border-l-8 border-l-blue-500">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <div class="text-[10px] font-black text-slate-400 uppercase mb-1">${p.fecha}</div>
+                    <div class="font-black text-slate-800 text-base uppercase">${p.lugar}</div>
+                </div>
+                <div class="font-black text-blue-600 text-lg">${parseFloat(p.total).toFixed(2)}€</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="window.compartirWhatsApp(${index})" class="bg-green-500 text-white text-[10px] font-black py-3 rounded-xl uppercase">WhatsApp</button>
+                <button onclick="window.modificarPresupuesto(${index})" class="bg-slate-800 text-white text-[10px] font-black py-3 rounded-xl uppercase">✏️ Editar</button>
+                <button onclick="window.enviarEmail(${index})" class="bg-blue-100 text-blue-600 text-[10px] font-black py-3 rounded-xl uppercase">Email</button>
+                <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest">Borrar</button>
+            </div>
+        </div>`).reverse().join(''); 
+};
+
+window.modificarPresupuesto = function(index) {
+    const p = clienteActual.presupuestos[index];
+    if(!p) return;
+    trabajoActual = JSON.parse(JSON.stringify(p)); 
+    editandoIndex = index;
+    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
+    window.irAPantalla('trabajo');
+    window.cambiarVista('tecnico');
+    setTimeout(() => { window.renderListaMedidas(); }, 50);
+};
+
+window.iniciarNuevaMedicion = function() {
+    const lugar = prompt("¿Dónde es la obra?");
+    if (!lugar) return;
+    editandoIndex = null;
+    trabajoActual = { lugar: lugar, fecha: new Date().toLocaleDateString(), lineas: [], iva: 21, total: 0 };
+    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
+    window.irAPantalla('trabajo');
+    window.cambiarVista('tecnico');
+};
+
+window.abrirPrompt = function(tipo) {
+    const conf = CONFIG[tipo];
+    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
+    let cantidad = 0;
+
+    if(tipo === 'techos') {
+        const ancho = (prompt("Ancho:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
+        const largo = (prompt("Largo:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
+        cantidad = ancho * largo;
+    } 
+    else if(tipo === 'tabicas') {
+        const largo = (prompt("Largo:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
+        const ancho = parseFloat(prompt("Ancho (caída):", "0")) || 0;
+        cantidad = largo * ancho;
+    }
+    else if(tipo === 'cajones') {
+        const ancho = parseFloat(prompt("Ancho:", "0") || 0);
+        const alto = parseFloat(prompt("Alto:", "0") || 0);
+        const largo = (prompt("Largo total:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
+        cantidad = (ancho + alto) * largo;
+    }
+    else if(conf.esM2) {
+        const largo = (prompt("Largo:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
+        const alto = parseFloat(prompt("Alto:", "0")) || 0;
+        cantidad = largo * alto;
+    } else {
+        cantidad = (prompt(`Cantidad de ${conf.n}:`, "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
+    }
+
+    if(cantidad > 0) {
+        trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n });
+        window.renderListaMedidas();
+    }
+};
+
+window.renderListaMedidas = function() {
+    const cont = document.getElementById('resumen-medidas-pantalla');
+    if(!cont) return;
+    if(!trabajoActual.lineas || trabajoActual.lineas.length === 0) {
+        cont.innerHTML = "<p class='text-center text-slate-400 py-10 text-xs italic font-bold'>No hay metros añadidos</p>";
+        return;
+    }
+    cont.innerHTML = trabajoActual.lineas.map((l, i) => `
+        <div class="flex justify-between items-center bg-white p-4 rounded-2xl border mb-3 shadow-sm">
+            <div class="text-xs">
+                <span class="font-black text-slate-800 uppercase tracking-tighter">${l.icono} ${l.nombre}</span><br>
+                <span class="font-bold text-slate-400">${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} x ${l.precio}€</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="font-black text-blue-600 text-sm">${(l.cantidad * l.precio).toFixed(2)}€</span>
+                <button onclick="window.quitarLinea(${i})" class="text-red-400 bg-red-50 w-8 h-8 rounded-xl font-bold">✕</button>
+            </div>
+        </div>`).join('');
+};
+
+window.quitarLinea = function(i) {
     trabajoActual.lineas.splice(i, 1);
-    renderListaMedidas();
-}
+    window.renderListaMedidas();
+};
 
-function cambiarVista(v) {
-    document.getElementById('vista-tecnico').classList.add('hidden');
-    document.getElementById('vista-economico').classList.add('hidden');
-    document.getElementById('vista-' + v).classList.remove('hidden');
-    document.getElementById('tab-tecnico').classList.remove('tab-active');
-    document.getElementById('tab-economico').classList.remove('tab-active');
-    document.getElementById('tab-' + v).classList.add('tab-active');
-    if(v === 'economico') renderPresupuesto();
-}
-
-function renderPresupuesto() {
-    let suma = 0;
-    let html = "";
-    trabajoActual.lineas.forEach(l => {
-        const totalLinea = l.cantidad * l.precio;
-        suma += totalLinea;
-        html += `<div class="flex justify-between py-1 border-b"><span>${l.nombre}</span><span>${totalLinea.toFixed(2)}€</span></div>`;
-    });
-    document.getElementById('desglose-precios').innerHTML = html;
-    const totalFinal = suma * 1.21;
+window.renderPresupuesto = function() {
+    let subtotal = 0;
+    trabajoActual.lineas.forEach(l => subtotal += (l.cantidad * l.precio));
+    const totalFinal = subtotal * 1.21;
+    document.getElementById('desglose-precios').innerHTML = `
+        <div class="text-[10px] font-black text-blue-500 mb-3 uppercase tracking-widest italic">${trabajoActual.lugar}</div>
+        ${trabajoActual.lineas.map(l => `
+            <div class="border-b border-slate-50 py-3">
+                <div class="flex justify-between text-xs font-black uppercase text-slate-700">
+                    <span>${l.icono} ${l.nombre}</span>
+                    <span>${(l.cantidad*l.precio).toFixed(2)}€</span>
+                </div>
+                <div class="text-[9px] text-slate-400 font-bold mt-1 uppercase">
+                    Detalle: ${l.cantidad.toFixed(2)} x ${l.precio.toFixed(2)}€
+                </div>
+            </div>`).join('')}
+    `;
     document.getElementById('total-final').innerText = totalFinal.toFixed(2) + "€";
     trabajoActual.total = totalFinal;
-}
+};
 
-function guardarTodo() {
-    clienteActual.presupuestos.push(JSON.parse(JSON.stringify(trabajoActual)));
-    save();
-    irAPantalla('expediente');
-}
+window.guardarTodo = function() {
+    if(editandoIndex !== null) {
+        clienteActual.presupuestos[editandoIndex] = JSON.parse(JSON.stringify(trabajoActual));
+    } else {
+        clienteActual.presupuestos.push(JSON.parse(JSON.stringify(trabajoActual)));
+    }
+    window.save();
+    window.irAPantalla('expediente');
+};
 
-function renderHistorial() {
-    const cont = document.getElementById('archivo-presupuestos');
-    cont.innerHTML = (clienteActual.presupuestos || []).map(p => `
-        <div class="bg-white p-3 rounded border mb-2 flex justify-between">
-            <span><b>${p.lugar}</b> (${p.fecha})</span>
-            <span class="text-blue-600 font-bold">${p.total.toFixed(2)}€</span>
-        </div>
-    `).reverse().join('');
-}
+window.save = function() {
+    localStorage.setItem('presupro_v3', JSON.stringify(db));
+    window.renderListaClientes();
+};
 
-function save() { localStorage.setItem('presupro_v3', JSON.stringify(db)); }
+window.compartirWhatsApp = function(index) {
+    const p = clienteActual.presupuestos[index];
+    let msg = `*PRESUPUESTO: ${p.lugar.toUpperCase()}*\n`;
+    msg += `Cliente: ${clienteActual.nombre}\n`;
+    p.lineas.forEach(l => msg += `${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} = ${(l.cantidad*l.precio).toFixed(2)}€\n`);
+    msg += `*TOTAL CON IVA: ${parseFloat(p.total).toFixed(2)}€*`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+};
 
-window.onload = renderListaClientes;
+window.enviarEmail = function(index) {
+    const p = clienteActual.presupuestos[index];
+    window.location.href = `mailto:?subject=Presupuesto ${p.lugar}&body=Total: ${p.total}€`;
+};
+
+window.borrarPresupuesto = function(index) {
+    if(confirm("¿Borrar definitivamente?")) {
+        clienteActual.presupuestos.splice(index, 1);
+        window.save();
+        window.renderHistorial();
+    }
+};
+
+window.onload = () => { window.renderListaClientes(); };
