@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PresuPro V3</title>
+    <title>PresuPro V3 - Gold Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .hidden { display: none !important; }
         .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: 800; }
-        body { font-family: system-ui, -apple-system, sans-serif; }
+        body { font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body class="bg-slate-50 antialiased">
@@ -46,12 +46,12 @@
 
         <div id="vista-tecnico" class="vista-trabajo p-6">
             <div class="grid grid-cols-2 gap-3 mb-8">
-                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">🧱 Tabiques</button>
-                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">🏠 Techos</button>
-                <button onclick="abrirPrompt('cajones')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📦 Cajones</button>
-                <button onclick="abrirPrompt('tabicas')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📐 Tabicas</button>
-                <button onclick="abrirPrompt('cantoneras')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📏 Cantoneras</button>
-                <button onclick="abrirPrompt('horas')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">⏱️ Horas</button>
+                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm active:bg-slate-50">🧱 Tabiques</button>
+                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm active:bg-slate-50">🏠 Techos</button>
+                <button onclick="abrirPrompt('cajones')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm active:bg-slate-50">📦 Cajones</button>
+                <button onclick="abrirPrompt('tabicas')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm active:bg-slate-50">📐 Tabicas</button>
+                <button onclick="abrirPrompt('cantoneras')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm active:bg-slate-50">📏 Cantoneras</button>
+                <button onclick="abrirPrompt('horas')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm active:bg-slate-50">⏱️ Horas</button>
             </div>
             <div id="resumen-medidas-pantalla"></div>
         </div>
