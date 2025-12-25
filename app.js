@@ -1,3 +1,4 @@
+
 // 1. CONFIGURACIÓN
 const CONFIG = {
     'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
@@ -13,8 +14,17 @@ let clienteActual = null;
 let trabajoActual = { lineas: [], iva: 21, total: 0, lugar: "", fecha: "" };
 let editandoIndex = null;
 
-// --- FUNCIONES DE NAVEGACIÓN Y CLIENTES (SE MANTIENEN IGUAL QUE AYER) ---
+// AUXILIAR: PROCESAR SUMAS (5+2.5+1) Y COMAS
+const procesarSuma = (valor) => {
+    if (!valor) return 0;
+    return valor.toString().split('+').reduce((acc, curr) => {
+        // Cambiamos coma por punto para que el móvil no falle
+        const num = Number(curr.replace(',', '.').trim());
+        return acc + (isNaN(num) ? 0 : num);
+    }, 0);
+};
 
+// 2. NAVEGACIÓN
 window.irAPantalla = function(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
     const p = document.getElementById(`pantalla-${id}`);
@@ -29,10 +39,12 @@ window.cambiarVista = function(v) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
     const tab = document.getElementById(`tab-${v}`);
     if(tab) tab.classList.add('tab-active');
+    
     if(v === 'economico') window.renderPresupuesto();
     if(v === 'tecnico') window.renderListaMedidas();
 };
 
+// 3. CLIENTES
 window.nuevoCliente = function() {
     const n = prompt("Nombre del Cliente:");
     if(!n) return;
@@ -54,7 +66,7 @@ window.renderListaClientes = function() {
                 <div class="font-black text-slate-800 text-lg uppercase leading-tight">${c.nombre}</div>
                 <div class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">${c.ciudad || 'Sin ciudad'}</div>
             </div>
-            <button onclick="window.borrarCliente(${c.id}, event)" class="bg-red-50 text-red-500 p-3 rounded-2xl">🗑️</button>
+            <button onclick="window.borrarCliente(${c.id}, event)" class="bg-red-50 text-red-500 p-3 rounded-2xl text-xl">🗑️</button>
         </div>
     `).join('');
 };
@@ -67,6 +79,7 @@ window.borrarCliente = function(id, event) {
     }
 };
 
+// 4. EXPEDIENTE
 window.abrirExpediente = function(id) { 
     clienteActual = db.clientes.find(c => c.id === id); 
     if(!clienteActual) return;
@@ -98,27 +111,20 @@ window.renderHistorial = function() {
                 <button onclick="window.compartirWhatsApp(${index})" class="bg-green-500 text-white text-[10px] font-black py-3 rounded-xl uppercase">WhatsApp</button>
                 <button onclick="window.modificarPresupuesto(${index})" class="bg-slate-800 text-white text-[10px] font-black py-3 rounded-xl uppercase">✏️ Editar</button>
                 <button onclick="window.enviarEmail(${index})" class="bg-blue-100 text-blue-600 text-[10px] font-black py-3 rounded-xl uppercase">Email</button>
-                <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest">Borrar</button>
+                <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 py-3 rounded-xl text-[10px] font-black uppercase">Borrar</button>
             </div>
         </div>`).reverse().join(''); 
 };
 
-// --- MEJORA DE SUMA CON EL SIGNO "+" ---
-
+// 5. MEDICIONES CON FÓRMULAS Y SUMA "+"
 window.abrirPrompt = function(tipo) {
     const conf = CONFIG[tipo];
-    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
+    const precio = parseFloat((prompt(`Precio para ${conf.n}:`, "0") || "0").replace(',', '.')) || 0;
     let cantidad = 0;
 
-    // Función auxiliar para sumar si el usuario pone "5+2+1"
-    const procesarSuma = (valor) => {
-        if (!valor) return 0;
-        return valor.toString().split('+').reduce((acc, curr) => acc + Number(curr.replace(',', '.')), 0);
-    };
-
     if(tipo === 'techos') {
-        const ancho = procesarSuma(prompt("Ancho (ej: 4+2.5):", "0"));
-        const largo = procesarSuma(prompt("Largo (ej: 5+3):", "0"));
+        const ancho = procesarSuma(prompt("Ancho (puedes sumar 4+2.5):", "0"));
+        const largo = procesarSuma(prompt("Largo (puedes sumar 5+3):", "0"));
         cantidad = ancho * largo;
     } 
     else if(tipo === 'tabicas') {
@@ -132,41 +138,18 @@ window.abrirPrompt = function(tipo) {
         const largo = procesarSuma(prompt("Largo total (ej: 2+2+3):", "0"));
         cantidad = (ancho + alto) * largo;
     }
-    else if(conf.esM2) { // Tabiques u otros m2
-        const largo = procesarSuma(prompt("Largo acumulado (ej: 5+5+2):", "0"));
+    else if(conf.esM2) {
+        const largo = procesarSuma(prompt("Largo acumulado:", "0"));
         const alto = parseFloat((prompt("Alto:", "0") || "0").replace(',', '.')) || 0;
         cantidad = largo * alto;
-    } else { // Cantoneras, Horas, etc.
-        cantidad = procesarSuma(prompt(`Cantidad de ${conf.n} (puedes sumar con +):`, "0"));
+    } else {
+        cantidad = procesarSuma(prompt(`Cantidad de ${conf.n} (puedes sumar):`, "0"));
     }
 
     if(cantidad > 0) {
         trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n });
         window.renderListaMedidas();
     }
-};
-
-// --- RESTO DE FUNCIONES (IGUALES) ---
-
-window.modificarPresupuesto = function(index) {
-    const p = clienteActual.presupuestos[index];
-    if(!p) return;
-    trabajoActual = JSON.parse(JSON.stringify(p)); 
-    editandoIndex = index;
-    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
-    window.irAPantalla('trabajo');
-    window.cambiarVista('tecnico');
-    setTimeout(() => { window.renderListaMedidas(); }, 50);
-};
-
-window.iniciarNuevaMedicion = function() {
-    const lugar = prompt("¿Dónde es la obra?");
-    if (!lugar) return;
-    editandoIndex = null;
-    trabajoActual = { lugar: lugar, fecha: new Date().toLocaleDateString(), lineas: [], iva: 21, total: 0 };
-    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
-    window.irAPantalla('trabajo');
-    window.cambiarVista('tecnico');
 };
 
 window.renderListaMedidas = function() {
@@ -187,11 +170,6 @@ window.renderListaMedidas = function() {
                 <button onclick="window.quitarLinea(${i})" class="text-red-400 bg-red-50 w-8 h-8 rounded-xl font-bold">✕</button>
             </div>
         </div>`).join('');
-};
-
-window.quitarLinea = function(i) {
-    trabajoActual.lineas.splice(i, 1);
-    window.renderListaMedidas();
 };
 
 window.renderPresupuesto = function() {
@@ -215,6 +193,7 @@ window.renderPresupuesto = function() {
     trabajoActual.total = totalFinal;
 };
 
+// 6. GUARDAR Y COMPARTIR
 window.guardarTodo = function() {
     if(editandoIndex !== null) {
         clienteActual.presupuestos[editandoIndex] = JSON.parse(JSON.stringify(trabajoActual));
@@ -233,15 +212,41 @@ window.save = function() {
 window.compartirWhatsApp = function(index) {
     const p = clienteActual.presupuestos[index];
     let msg = `*PRESUPUESTO: ${p.lugar.toUpperCase()}*\n`;
-    msg += `Cliente: ${clienteActual.nombre}\n`;
-    p.lineas.forEach(l => msg += `${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} = ${(l.cantidad*l.precio).toFixed(2)}€\n`);
-    msg += `*TOTAL CON IVA: ${parseFloat(p.total).toFixed(2)}€*`;
+    msg += `Cliente: ${clienteActual.nombre}\n\n`;
+    p.lineas.forEach(l => msg += `${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} x ${l.precio}€ = ${(l.cantidad*l.precio).toFixed(2)}€\n`);
+    msg += `\n*TOTAL CON IVA: ${parseFloat(p.total).toFixed(2)}€*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
 window.enviarEmail = function(index) {
     const p = clienteActual.presupuestos[index];
-    window.location.href = `mailto:?subject=Presupuesto ${p.lugar}&body=Total: ${p.total}€`;
+    const asunto = `PRESUPUESTO: ${p.lugar.toUpperCase()} - ${clienteActual.nombre}`;
+    let cuerpo = `Hola,\n\nAdjunto el detalle del presupuesto para ${p.lugar.toUpperCase()}:\n\n`;
+    p.lineas.forEach(l => {
+        cuerpo += `- ${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)} ${CONFIG[l.tipo].uni} x ${l.precio}€ = ${(l.cantidad*l.precio).toFixed(2)}€\n`;
+    });
+    cuerpo += `\nTOTAL CON IVA: ${parseFloat(p.total).toFixed(2)}€\n\nQuedamos a su disposición.`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+};
+
+window.modificarPresupuesto = function(index) {
+    const p = clienteActual.presupuestos[index];
+    trabajoActual = JSON.parse(JSON.stringify(p)); 
+    editandoIndex = index;
+    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
+    window.irAPantalla('trabajo');
+    window.cambiarVista('tecnico');
+    setTimeout(() => { window.renderListaMedidas(); }, 50);
+};
+
+window.iniciarNuevaMedicion = function() {
+    const lugar = prompt("¿Dónde es la obra?");
+    if (!lugar) return;
+    editandoIndex = null;
+    trabajoActual = { lugar: lugar, fecha: new Date().toLocaleDateString(), lineas: [], iva: 21, total: 0 };
+    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
+    window.irAPantalla('trabajo');
+    window.cambiarVista('tecnico');
 };
 
 window.borrarPresupuesto = function(index) {
@@ -250,6 +255,11 @@ window.borrarPresupuesto = function(index) {
         window.save();
         window.renderHistorial();
     }
+};
+
+window.quitarLinea = function(i) {
+    trabajoActual.lineas.splice(i, 1);
+    window.renderListaMedidas();
 };
 
 window.onload = () => { window.renderListaClientes(); };
