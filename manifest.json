@@ -1,0 +1,16 @@
+{
+  "name": "PresuPro Gestión Pladur",
+  "short_name": "PresuPro",
+  "description": "App para instaladores de Pladur.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#2563eb",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3522/3522108.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
