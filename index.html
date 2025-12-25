@@ -3,95 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aisladur Presupuestos</title>
+    <title>APPpresupuestos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: 900; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
+        }
         .hidden { display: none; }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .btn-plus {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+            transition: all 0.2s ease;
+        }
+        .btn-plus:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="antialiased text-slate-900">
 
     <div id="pantalla-clientes" class="max-w-md mx-auto min-h-screen pb-24">
-        <header class="p-6 bg-white border-b sticky top-0 z-10 flex justify-between items-center">
+        <header class="p-6 glass-header sticky top-0 z-20 flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-black tracking-tighter text-blue-600 italic">AISLADUR</h1>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gestión de Clientes</p>
+                <h1 class="text-[10px] font-extrabold tracking-[0.2em] text-blue-600 uppercase mb-1">Panel de Control</h1>
+                <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">APP<span class="text-blue-600">presupuestos</span></h2>
             </div>
-            <button onclick="nuevoCliente()" class="bg-blue-600 text-white w-12 h-12 rounded-2xl shadow-lg shadow-blue-200 flex items-center justify-center text-2xl font-bold">+</button>
-        </header>
-
-        <div id="lista-clientes" class="p-4">
-            </div>
-    </div>
-
-    <div id="pantalla-expediente" class="max-w-md mx-auto min-h-screen pb-24 hidden">
-        <nav class="p-4 flex items-center bg-white border-b sticky top-0 z-10">
-            <button onclick="irAPantalla('clientes')" class="text-slate-400 font-bold mr-4 text-xl">← Volver</button>
-            <div id="titulo-cliente" class="flex-1 text-right">
-                </div>
-        </nav>
-
-        <div class="p-4">
-            <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-wide shadow-xl mb-6">
-                + Nueva Obra / Pedido
+            
+            <button onclick="nuevoCliente()" class="btn-plus text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+                </svg>
             </button>
-            <div id="archivo-presupuestos">
-                </div>
-        </div>
-    </div>
-
-    <div id="pantalla-trabajo" class="max-w-md mx-auto min-h-screen pb-32 hidden">
-        <header class="p-4 bg-white border-b flex justify-between items-center sticky top-0 z-10">
-            <button onclick="irAPantalla('expediente')" class="text-slate-400 font-bold text-xl">✕</button>
-            <div id="num-presu-header" class="font-black text-sm uppercase tracking-widest text-blue-600">NUEVA OBRA</div>
-            <button onclick="guardarTodo()" class="bg-green-500 text-white px-5 py-2 rounded-xl font-black text-xs uppercase">Guardar</button>
         </header>
 
-        <div class="flex bg-white border-b sticky top-[61px] z-10">
-            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="tab-btn flex-1 py-4 text-xs font-bold uppercase tab-active">Mediciones</button>
-            <button id="tab-economico" onclick="cambiarVista('economico')" class="tab-btn flex-1 py-4 text-xs font-bold uppercase">Presupuesto</button>
-        </div>
-
-        <div id="vista-tecnico" class="p-4 vista-trabajo">
-            <div class="mb-6">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest italic">Mano de Obra</h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="abrirPrompt('tabiques')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">🧱 Tabiques</button>
-                    <button onclick="abrirPrompt('techos')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">🏠 Techos</button>
-                    <button onclick="abrirPrompt('cajones')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">📦 Cajones</button>
-                    <button onclick="abrirPrompt('tabicas')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">📐 Tabicas</button>
-                    <button onclick="abrirPrompt('cantoneras')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">📏 Cantoneras</button>
-                    <button onclick="abrirPrompt('horas')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">⏱️ Horas</button>
-                </div>
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Mis Clientes</span>
             </div>
-
-            <div class="mb-6">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest italic text-blue-500">Perfilería y Placas</h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="abrirPrompt('placa13')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">📄 Placa 13</button>
-                    <button onclick="abrirPrompt('montante48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">🏗️ Mont. 48</button>
-                    <button onclick="abrirPrompt('montante70')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">🏗️ Mont. 70</button>
-                    <button onclick="abrirPrompt('canal48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">🛤️ Canal 48</button>
-                    <button onclick="abrirPrompt('canal70')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">🛤️ Canal 70</button>
-                    <button onclick="abrirPrompt('tc48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">📏 TC 48</button>
-                    <button onclick="abrirPrompt('cuelgues')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">⚓ Cuelgues</button>
-                    <button onclick="abrirPrompt('perfilU')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">📐 Perfil U</button>
+            <div id="lista-clientes">
                 </div>
-            </div>
-
-            <div id="resumen-medidas-pantalla">
-                </div>
-        </div>
-
-        <div id="vista-economico" class="p-4 hidden vista-trabajo">
-            <div id="desglose-precios" class="space-y-4"></div>
-            <div class="border-t-2 border-dashed mt-6 pt-6 flex justify-between items-center">
-                <span class="font-black text-slate-400 uppercase text-xs italic">Total + IVA</span>
-                <span id="total-final" class="text-3xl font-black text-blue-600 tracking-tighter">0.00€</span>
-            </div>
         </div>
     </div>
 
