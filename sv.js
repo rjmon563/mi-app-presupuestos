@@ -1,30 +1,42 @@
-const CACHE_NAME = 'presupro-v3';
-const ASSETS = [
+const CACHE_NAME = 'presupro-v3-cache'; // Cambiado a v3 para forzar la actualización
+const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './app.js',
   './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
+  './logo.png' // Asegúrate de que el nombre coincida con tu archivo de imagen
 ];
 
-// Instalación: Guarda los archivos en la memoria del móvil
-self.addEventListener('install', (evt) => {
-  evt.waitUntil(
+// Instalación: Guarda los archivos en el móvil
+self.addEventListener('install', (event) => {
+  event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Guardando archivos en caché...');
-      return cache.addAll(ASSETS);
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
+  self.skipWaiting();
+});
+
+// Activación: Borra cachés antiguos para que no ocupen espacio
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
+      );
     })
   );
 });
 
-// Intercepta las peticiones para que funcione offline
-self.addEventListener('fetch', (evt) => {
-  evt.respondWith(
-    caches.match(evt.request).then((response) => {
-      return response || fetch(evt.request);
+// Estrategia: Carga primero de internet, si falla, usa el caché (Network First)
+// Esto es mejor para una app donde los datos cambian
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
     })
   );
-
 });
