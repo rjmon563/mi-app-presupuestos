@@ -9,7 +9,7 @@ const CONFIG = {
 
 let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [], contador: 1 };
 let clienteActual = null;
-let trabajoActual = { lineas: [], estado: 'Pendiente', iva: 21, descuento: 0, anticipo: 0, observaciones: "" };
+let trabajoActual = { lineas: [], estado: 'Pendiente', iva: 21, descuento: 0, anticipo: 0, observaciones: "", tipoMaterial: 'con' };
 
 function irAPantalla(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
@@ -47,70 +47,107 @@ function abrirPrompt(tipo) {
 function renderListaMedidas() {
     const cont = document.getElementById('resumen-medidas-pantalla');
     if(trabajoActual.lineas.length === 0) {
-        cont.innerHTML = `<p class="text-center text-slate-400 text-xs py-4">Sin elementos. Haz clic en "Añadir" para crear uno</p>`;
+        cont.innerHTML = `<p class="text-center text-slate-400 text-xs py-4">Sin elementos añadidos</p>`;
         return;
     }
     cont.innerHTML = trabajoActual.lineas.map((l, idx) => `
-        <div class="flex justify-between items-center bg-white p-3 rounded-xl border mb-2 shadow-sm">
+        <div class="flex justify-between items-center bg-white p-3 rounded-xl border mb-2 shadow-sm text-sm">
             <div class="flex items-center">
-                <span class="text-xl mr-3">${l.icono}</span>
+                <span class="mr-3 text-lg">${l.icono}</span>
                 <div>
-                    <div class="font-bold text-slate-700 text-sm">${CONFIG[l.tipo].n}</div>
-                    <div class="text-[10px] text-slate-500">${l.cantidad.toFixed(2)} x ${l.precio.toFixed(2)}€</div>
+                    <div class="font-bold text-slate-700">${CONFIG[l.tipo].n}</div>
+                    <div class="text-[10px] text-slate-500">${l.cantidad.toFixed(2)} unidades/m²</div>
                 </div>
             </div>
-            <div class="text-right">
-                <div class="font-black text-blue-600">${(l.cantidad * l.precio).toFixed(2)}€</div>
-                <button onclick="eliminarLinea(${idx})" class="text-[9px] text-red-400 font-bold uppercase">Eliminar</button>
-            </div>
+            <div class="text-right font-bold text-blue-600">${(l.cantidad * l.precio).toFixed(2)}€</div>
         </div>
     `).join('');
 }
 
-function eliminarLinea(idx) {
-    trabajoActual.lineas.splice(idx, 1);
-    renderListaMedidas();
-}
-
 function renderPresupuesto() {
-    let subtotal = trabajoActual.lineas.reduce((acc, l) => acc + (l.cantidad * l.precio), 0);
+    let h = `<h3 class="font-black text-slate-800 border-b pb-2 uppercase text-[10px] mb-3">📄 Desglose del Trabajo</h3>`;
+    let subtotal = 0;
+
+    trabajoActual.lineas.forEach(l => {
+        let totalLinea = l.cantidad * l.precio;
+        subtotal += totalLinea;
+        h += `
+            <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-500">${l.icono} ${CONFIG[l.tipo].n}:</span>
+                <span class="font-medium text-slate-700">${totalLinea.toFixed(2)}€</span>
+            </div>
+        `;
+    });
+
     const ivaPct = parseFloat(document.getElementById('select-iva')?.value) || 21;
     const descPct = parseFloat(document.getElementById('input-descuento')?.value) || 0;
     const anticipo = parseFloat(document.getElementById('input-anticipo')?.value) || 0;
+    
     const descuento = subtotal * (descPct / 100);
     const baseImponible = subtotal - descuento;
     const cuotaIva = baseImponible * (ivaPct / 100);
     const totalConIva = baseImponible + cuotaIva;
     const totalFinal = totalConIva - anticipo;
-    document.getElementById('desglose-precios').innerHTML = `
-        <div class="space-y-1 text-sm text-slate-600">
+
+    h += `
+        <div class="border-t mt-3 pt-3 space-y-1 text-sm">
             <div class="flex justify-between"><span>Subtotal:</span><span>${subtotal.toFixed(2)}€</span></div>
-            <div class="flex justify-between text-red-500"><span>Descuento (${descPct}%):</span><span>-${descuento.toFixed(2)}€</span></div>
-            <div class="flex justify-between"><span>Base Imponible:</span><span>${baseImponible.toFixed(2)}€</span></div>
-            <div class="flex justify-between"><span>IVA (${ivaPct}%):</span><span>${cuotaIva.toFixed(2)}€</span></div>
-            <div class="flex justify-between font-bold text-slate-900 border-t pt-1 mt-1"><span>TOTAL:</span><span>${totalConIva.toFixed(2)}€</span></div>
-            <div class="flex justify-between text-green-600 italic"><span>Anticipo:</span><span>-${anticipo.toFixed(2)}€</span></div>
+            ${descuento > 0 ? `<div class="flex justify-between text-red-500"><span>Dto (${descPct}%):</span><span>-${descuento.toFixed(2)}€</span></div>` : ''}
+            <div class="flex justify-between font-bold"><span>Base Impon.:</span><span>${baseImponible.toFixed(2)}€</span></div>
+            <div class="flex justify-between text-slate-500"><span>IVA (${ivaPct}%):</span><span>${cuotaIva.toFixed(2)}€</span></div>
+            <div class="flex justify-between font-black text-blue-600 border-t pt-1"><span>TOTAL:</span><span>${totalConIva.toFixed(2)}€</span></div>
+            ${anticipo > 0 ? `<div class="flex justify-between text-green-600 italic"><span>Anticipo:</span><span>-${anticipo.toFixed(2)}€</span></div>` : ''}
         </div>
     `;
-    trabajoActual.total = totalFinal;
+    
+    document.getElementById('desglose-precios').innerHTML = h;
     document.getElementById('total-final').innerText = totalFinal.toFixed(2) + "€";
+    trabajoActual.total = totalFinal;
 }
 
 function renderCalculadora() {
-    const mats = { 'Placas 13mm': 0, 'Sacos Pasta 20kg': 0, 'Perfilería (m)': 0 };
+    const modo = document.getElementById('selector-modo-material').value;
+    const cont = document.getElementById('contenedor-pedido');
+    
+    if (modo === 'sin') {
+        cont.innerHTML = `<p class="text-center text-slate-400 py-4 italic">Presupuesto solo de mano de obra (Sin materiales).</p>`;
+        return;
+    }
+
+    const tipoPlaca = document.getElementById('tipo-placa').value;
+    const tipoPasta = document.getElementById('tipo-pasta').value;
+
+    const mats = { 
+        [tipoPlaca]: 0, 
+        [tipoPasta]: 0, 
+        'Perfiles (Metros)': 0,
+        'Cinta de juntas (m)': 0,
+        'Cinta cantonera (m)': 0
+    };
+
     trabajoActual.lineas.forEach(l => {
         const c = CONFIG[l.tipo];
-        mats['Placas 13mm'] += Math.ceil((l.cantidad * c.fPlaca) / 2.88);
-        mats['Sacos Pasta 20kg'] += Math.ceil((l.cantidad * c.fPasta) / 20);
-        mats['Perfilería (m)'] += Math.ceil(l.cantidad * c.fPerfil);
+        mats[tipoPlaca] += (l.cantidad * c.fPlaca) / 2.88;
+        mats[tipoPasta] += (l.cantidad * c.fPasta) / 20;
+        mats['Perfiles (Metros)'] += (l.cantidad * c.fPerfil);
+        mats['Cinta de juntas (m)'] += (l.cantidad * 1.5);
+        if(l.tipo === 'cantoneras') mats['Cinta cantonera (m)'] += l.cantidad;
     });
+
     let h = "";
     for(let [m, v] of Object.entries(mats)) {
-        if(v > 0) h += `<div class="flex justify-between border-b border-slate-700 py-2"><span>${m}</span><span class="font-bold text-blue-400">${v}</span></div>`;
+        if(v > 0) {
+            let unidad = m.includes('Metros') || m.includes('(m)') ? 'm' : 'uds';
+            h += `<div class="flex justify-between border-b border-slate-700 py-3">
+                    <span class="text-slate-300 font-medium">${m}</span>
+                    <span class="font-black text-blue-400 text-lg">${Math.ceil(v)} <small class="text-[10px] text-slate-500">${unidad}</small></span>
+                  </div>`;
+        }
     }
-    document.getElementById('contenedor-pedido').innerHTML = h || "No hay medidas";
+    cont.innerHTML = h || "Añade mediciones primero";
 }
 
+// ... Resto de funciones (renderListaClientes, nuevoCliente, guardarTodo, etc.) iguales que antes
 function renderListaClientes() {
     const filtro = document.getElementById('buscador').value.toLowerCase();
     const lista = db.clientes.filter(c => c.nombre.toLowerCase().includes(filtro));
@@ -122,60 +159,18 @@ function renderListaClientes() {
     `).join('');
     actualizarDash();
 }
-
-function nuevoCliente() {
-    const n = prompt("Nombre del cliente:");
-    if(n) { db.clientes.push({id: Date.now(), nombre: n, presupuestos: []}); save(); }
-}
-
-function abrirExpediente(id) {
-    clienteActual = db.clientes.find(c => c.id === id);
-    document.getElementById('titulo-cliente').innerText = clienteActual.nombre;
-    renderHistorial();
-    irAPantalla('expediente');
-}
-
-function renderHistorial() {
-    document.getElementById('archivo-presupuestos').innerHTML = clienteActual.presupuestos.map(p => `
-        <div class="bg-white p-3 rounded-xl border flex justify-between items-center mb-2 shadow-sm">
-            <div><div class="text-[10px] font-bold text-blue-500 uppercase">${p.numero}</div><div class="text-xs text-slate-500">${p.fecha} - ${p.estado}</div></div>
-            <div class="font-black text-slate-700">${parseFloat(p.total).toFixed(2)}€</div>
-        </div>
-    `).join('');
-}
-
-function iniciarNuevaMedicion() {
-    trabajoActual = { numero: `PRE-2025-${String(db.contador).padStart(3,'0')}`, lineas: [], estado: 'Pendiente', iva: 21, total: 0, fecha: new Date().toLocaleDateString() };
-    document.getElementById('num-presu-header').innerText = trabajoActual.numero;
-    document.getElementById('resumen-medidas-pantalla').innerHTML = "";
-    cambiarVista('tecnico');
-    irAPantalla('trabajo');
-}
-
+function nuevoCliente() { const n = prompt("Nombre del cliente:"); if(n) { db.clientes.push({id: Date.now(), nombre: n, presupuestos: []}); save(); } }
+function abrirExpediente(id) { clienteActual = db.clientes.find(c => c.id === id); document.getElementById('titulo-cliente').innerText = clienteActual.nombre; renderHistorial(); irAPantalla('expediente'); }
+function renderHistorial() { document.getElementById('archivo-presupuestos').innerHTML = clienteActual.presupuestos.map(p => `
+    <div class="bg-white p-3 rounded-xl border flex justify-between items-center mb-2 shadow-sm">
+        <div><div class="text-[10px] font-bold text-blue-500 uppercase">${p.numero}</div><div class="text-xs text-slate-500">${p.fecha} - ${p.estado}</div></div>
+        <div class="font-black text-slate-700">${parseFloat(p.total).toFixed(2)}€</div>
+    </div>
+`).join(''); }
+function iniciarNuevaMedicion() { trabajoActual = { numero: `PRE-2025-${String(db.contador).padStart(3,'0')}`, lineas: [], estado: 'Pendiente', iva: 21, total: 0, fecha: new Date().toLocaleDateString() }; document.getElementById('num-presu-header').innerText = trabajoActual.numero; document.getElementById('resumen-medidas-pantalla').innerHTML = ""; cambiarVista('tecnico'); irAPantalla('trabajo'); }
 function save() { localStorage.setItem('presupro_v3', JSON.stringify(db)); renderListaClientes(); }
+function guardarTodo() { trabajoActual.estado = document.getElementById('select-estado')?.value || 'Pendiente'; trabajoActual.observaciones = document.getElementById('input-notas')?.value || ""; clienteActual.presupuestos.push({...trabajoActual}); db.contador++; save(); irAPantalla('expediente'); }
+function actualizarDash() { let t = 0; db.clientes.forEach(c => c.presupuestos.forEach(p => t += p.total)); document.getElementById('dash-pendiente').innerText = t.toFixed(2) + "€"; }
+function enviarPedidoWhatsApp() { const pedidoTxt = document.getElementById('contenedor-pedido').innerText; const mensaje = `*PEDIDO MATERIAL - ${trabajoActual.numero}*\nCliente: ${clienteActual.nombre}\n\n${pedidoTxt}`; window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`); }
 
-function guardarTodo() {
-    trabajoActual.estado = document.getElementById('select-estado')?.value || 'Pendiente';
-    trabajoActual.observaciones = document.getElementById('input-notas')?.value || "";
-    clienteActual.presupuestos.push({...trabajoActual});
-    db.contador++;
-    save();
-    irAPantalla('expediente');
-}
-
-function actualizarDash() {
-    let t = 0;
-    db.clientes.forEach(c => c.presupuestos.forEach(p => t += p.total));
-    document.getElementById('dash-pendiente').innerText = t.toFixed(2) + "€";
-}
-
-function enviarPedidoWhatsApp() {
-    const pedidoTxt = document.getElementById('contenedor-pedido').innerText;
-    const mensaje = `*PEDIDO MATERIAL - ${trabajoActual.numero}*\nCliente: ${clienteActual.nombre}\n\n${pedidoTxt}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`);
-}
-
-window.onload = () => { 
-    renderListaClientes(); 
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
-};
+window.onload = () => { renderListaClientes(); if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js'); };
