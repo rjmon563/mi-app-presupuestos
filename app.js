@@ -1,4 +1,4 @@
-// CONFIGURACIÓN DE RENDIMIENTOS (Ajusta estos números si lo necesitas)
+// 1. CONFIGURACIÓN DE RENDIMIENTOS
 const CONFIG = {
     'tabiques': { n: 'Tabiques', i: '🧱', fPlaca: 2.10, fPerfil: 2.1, fPasta: 0.5, esM2: true },
     'techos': { n: 'Techos', i: '🏠', fPlaca: 1.05, fPerfil: 3.2, fPasta: 0.6, esM2: true },
@@ -8,75 +8,136 @@ const CONFIG = {
     'horas': { n: 'Horas de Trabajo', i: '⏱️', fPlaca: 0, fPerfil: 0, fPasta: 0, esM2: false }
 };
 
+// 2. BASE DE DATOS Y VARIABLES GLOBALES
 let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [], contador: 1 };
 let clienteActual = null;
 let trabajoActual = { lineas: [], estado: 'Pendiente', iva: 21, descuento: 0, anticipo: 0, observaciones: "" };
 
-// --- NAVEGACIÓN ---
-window.irAPantalla = function(id) {
-    document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
-    document.getElementById(`pantalla-${id}`).classList.remove('hidden');
-    if(id === 'clientes') renderListaClientes();
+// 3. FUNCIONES DE UTILIDAD (GUARDAR Y DASHBOARD)
+window.save = function() {
+    localStorage.setItem('presupro_v3', JSON.stringify(db));
+    window.renderListaClientes();
 };
 
-window.cambiarVista = function(v) {
-    document.querySelectorAll('.vista-trabajo').forEach(div => div.classList.add('hidden'));
-    document.getElementById(`vista-${v}`).classList.remove('hidden');
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-    if(document.getElementById(`tab-${v}`)) document.getElementById(`tab-${v}`).classList.add('tab-active');
-    
-    // Al cambiar de pestaña, actualizamos los datos
-    if(v === 'materiales') renderCalculadora();
-    if(v === 'economico') renderPresupuesto();
+window.actualizarDash = function() {
+    let t = 0;
+    db.clientes.forEach(c => {
+        if(c.presupuestos) {
+            c.presupuestos.forEach(p => t += (parseFloat(p.total) || 0));
+        }
+    });
+    const dash = document.getElementById('dash-pendiente');
+    if(dash) dash.innerText = t.toFixed(2) + "€";
 };
 
-// --- CLIENTES (BOTÓN +) ---
+// 4. GESTIÓN DE CLIENTES
 window.nuevoCliente = function() {
     const n = prompt("Nombre del cliente:");
     if(n) {
         db.clientes.push({id: Date.now(), nombre: n, presupuestos: []});
-        save();
+        window.save();
     }
 };
 
 window.renderListaClientes = function() {
     const listaCont = document.getElementById('lista-clientes');
     if(!listaCont) return;
-    const filtro = document.getElementById('buscador').value.toLowerCase();
+    const buscador = document.getElementById('buscador');
+    const filtro = buscador ? buscador.value.toLowerCase() : "";
     const lista = db.clientes.filter(c => c.nombre.toLowerCase().includes(filtro));
+    
     listaCont.innerHTML = lista.map(c => `
-        <div onclick="abrirExpediente(${c.id})" class="bg-white p-4 rounded-2xl border mb-3 shadow-sm flex justify-between items-center">
-            <div><div class="font-black text-slate-800">${c.nombre}</div><div class="text-[10px] text-slate-400 uppercase font-bold">${c.presupuestos.length} Trabajos</div></div>
+        <div onclick="window.abrirExpediente(${c.id})" class="bg-white p-4 rounded-2xl border mb-3 shadow-sm flex justify-between items-center">
+            <div>
+                <div class="font-black text-slate-800">${c.nombre}</div>
+                <div class="text-[10px] text-slate-400 uppercase font-bold">${c.presupuestos ? c.presupuestos.length : 0} Trabajos</div>
+            </div>
             <span class="text-blue-500">→</span>
         </div>
     `).join('');
-    actualizarDash();
+    window.actualizarDash();
 };
 
-// --- MEDICIÓN ---
+// 5. NAVEGACIÓN
+window.irAPantalla = function(id) {
+    document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
+    const pantalla = document.getElementById(`pantalla-${id}`);
+    if(pantalla) pantalla.classList.remove('hidden');
+    if(id === 'clientes') window.renderListaClientes();
+};
+
+window.cambiarVista = function(v) {
+    document.querySelectorAll('.vista-trabajo').forEach(div => div.classList.add('hidden'));
+    const vista = document.getElementById(`vista-${v}`);
+    if(vista) vista.classList.remove('hidden');
+    
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+    const tab = document.getElementById(`tab-${v}`);
+    if(tab) tab.classList.add('tab-active');
+    
+    if(v === 'materiales') window.renderCalculadora();
+    if(v === 'economico') window.renderPresupuesto();
+};
+
+// 6. TRABAJOS Y MEDICIONES
+window.abrirExpediente = function(id) { 
+    clienteActual = db.clientes.find(c => c.id === id); 
+    const titulo = document.getElementById('titulo-cliente');
+    if(titulo) titulo.innerText = clienteActual.nombre; 
+    window.renderHistorial(); 
+    window.irAPantalla('expediente'); 
+};
+
+window.renderHistorial = function() { 
+    const archivo = document.getElementById('archivo-presupuestos');
+    if(!archivo) return;
+    archivo.innerHTML = clienteActual.presupuestos.map(p => `
+        <div class="bg-white p-3 rounded-xl border mb-2 flex justify-between">
+            <span class="text-xs font-bold">${p.numero}</span>
+            <span class="font-bold">${parseFloat(p.total).toFixed(2)}€</span>
+        </div>`).join(''); 
+};
+
+window.iniciarNuevaMedicion = function() {
+    trabajoActual = { numero: `PRE-${Date.now().toString().slice(-4)}`, lineas: [], estado: 'Pendiente', iva: 21, total: 0 };
+    const header = document.getElementById('num-presu-header');
+    if(header) header.innerText = trabajoActual.numero;
+    const resumen = document.getElementById('resumen-medidas-pantalla');
+    if(resumen) resumen.innerHTML = "";
+    window.cambiarVista('tecnico');
+    window.irAPantalla('trabajo');
+};
+
 window.abrirPrompt = function(tipo) {
     const conf = CONFIG[tipo];
     let cantidad = 0;
-    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
+    const pInput = prompt(`Precio para ${conf.n}:`, "0");
+    if(pInput === null) return;
+    const precio = parseFloat(pInput) || 0;
     
     if(conf.esM2) {
         const largoInput = prompt(`${conf.n}: Introduce largo (ej: 10+5+2.5):`, "0");
         if(largoInput === null) return;
-        const alto = parseFloat(prompt("Introduce Alto/Ancho:", "0")) || 0;
+        const altoInput = prompt("Introduce Alto/Ancho:", "0");
+        if(altoInput === null) return;
+        const alto = parseFloat(altoInput) || 0;
         const sumaLargo = largoInput.split('+').reduce((a, b) => a + Number(b || 0), 0);
         cantidad = sumaLargo * alto;
     } else {
-        cantidad = parseFloat(prompt(`Cantidad de ${conf.n}:`, "0")) || 0;
+        const cantInput = prompt(`Cantidad de ${conf.n}:`, "0");
+        if(cantInput === null) return;
+        cantidad = parseFloat(cantInput) || 0;
     }
 
     if(cantidad > 0) {
         trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i });
-        renderListaMedidas();
+        window.renderListaMedidas();
     }
 };
 
 window.renderListaMedidas = function() {
     const cont = document.getElementById('resumen-medidas-pantalla');
+    if(!cont) return;
     if(trabajoActual.lineas.length === 0) {
         cont.innerHTML = `<p class="text-center text-slate-400 text-xs py-4">Sin datos</p>`;
         return;
@@ -89,7 +150,7 @@ window.renderListaMedidas = function() {
     `).join('');
 };
 
-// --- ECONÓMICO (DESGLOSE) ---
+// 7. ECONÓMICO Y MATERIALES
 window.renderPresupuesto = function() {
     let subtotal = 0;
     let h = `<h3 class="font-black text-slate-800 border-b pb-2 uppercase text-[10px] mb-3">📄 Desglose Detallado</h3>`;
@@ -125,10 +186,10 @@ window.renderPresupuesto = function() {
     trabajoActual.total = totalFinal;
 };
 
-// --- PEDIDO (CALCULADORA DE MATERIALES) ---
 window.renderCalculadora = function() {
     const modo = document.getElementById('selector-modo-material').value;
     const cont = document.getElementById('contenedor-pedido');
+    if(!cont) return;
     
     if (modo === 'sin') {
         cont.innerHTML = `<p class="text-center py-4 italic text-slate-400">Solo Mano de Obra</p>`;
@@ -145,54 +206,31 @@ window.renderCalculadora = function() {
         if(l.tipo === 'cantoneras') mLinealesCantonera += l.cantidad;
     });
 
-    // Cálculos rápidos
     const numPlacas = Math.ceil((m2Totales * 1.05) / 2.88);
-    const sacosPasta = Math.ceil(m2Totales * 0.5 / 20); // 1 saco cada 40m2 aprox
+    const sacosPasta = Math.ceil(m2Totales * 0.5 / 20);
     const perfiles = Math.ceil(m2Totales * 2.5);
 
     cont.innerHTML = `
-        <div class="space-y-3">
+        <div class="space-y-3 text-white">
             <div class="flex justify-between border-b border-slate-700 pb-2"><span>${placa}:</span><span class="text-blue-400 font-bold">${numPlacas} uds</span></div>
             <div class="flex justify-between border-b border-slate-700 pb-2"><span>${pasta}:</span><span class="text-blue-400 font-bold">${sacosPasta} sacos</span></div>
             <div class="flex justify-between border-b border-slate-700 pb-2"><span>Perfilería aprox:</span><span class="text-blue-400 font-bold">${perfiles} ml</span></div>
-            ${mLinealesCantonera > 0 ? `<div class="flex justify-between border-b border-slate-700 pb-2"><span>Cinta Cantonera:</span><span class="text-blue-400 font-bold">${Math.ceil(mLinealesCantonera)} ml</span></div>` : ''}
             <div class="flex justify-between"><span>Cinta Juntas:</span><span class="text-blue-400 font-bold">${Math.ceil(m2Totales * 1.5 / 150)} rollos</span></div>
         </div>
     `;
 };
 
-// --- UTILIDADES ---
-window.save = function() { localStorage.setItem('presupro_v3', JSON.stringify(db)); renderListaClientes(); };
-window.abrirExpediente = function(id) { 
-    clienteActual = db.clientes.find(c => c.id === id); 
-    document.getElementById('titulo-cliente').innerText = clienteActual.nombre; 
-    renderHistorial(); 
-    irAPantalla('expediente'); 
-};
-window.renderHistorial = function() { 
-    document.getElementById('archivo-presupuestos').innerHTML = clienteActual.presupuestos.map(p => `
-        <div class="bg-white p-3 rounded-xl border mb-2 flex justify-between">
-            <span class="text-xs font-bold">${p.numero}</span>
-            <span class="font-bold">${parseFloat(p.total).toFixed(2)}€</span>
-        </div>`).join(''); 
-};
-window.iniciarNuevaMedicion = function() {
-    trabajoActual = { numero: `PRE-${Date.now().toString().slice(-4)}`, lineas: [], estado: 'Pendiente', iva: 21, total: 0 };
-    document.getElementById('num-presu-header').innerText = trabajoActual.numero;
-    document.getElementById('resumen-medidas-pantalla').innerHTML = "";
-    cambiarVista('tecnico');
-    irAPantalla('trabajo');
-};
 window.guardarTodo = function() {
     trabajoActual.estado = document.getElementById('select-estado').value;
     clienteActual.presupuestos.push({...trabajoActual});
-    save();
-    irAPantalla('expediente');
+    window.save();
+    window.irAPantalla('expediente');
 };
-function actualizarDash() {
-    let t = 0;
-    db.clientes.forEach(c => c.presupuestos.forEach(p => t += p.total));
-    document.getElementById('dash-pendiente').innerText = t.toFixed(2) + "€";
-}
 
-window.onload = () => { renderListaClientes(); if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js'); };
+// 8. INICIO
+window.onload = () => { 
+    window.renderListaClientes(); 
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js');
+    }
+};
