@@ -11,7 +11,7 @@ const CONFIG = {
 let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [], contador: 1 };
 let clienteActual = null;
 let trabajoActual = { lineas: [], estado: 'Pendiente', iva: 21, total: 0, numero: "", lugar: "" };
-let editandoIndex = null; // Para saber si estamos modificando uno existente
+let editandoIndex = null;
 
 window.save = function() {
     localStorage.setItem('presupro_v3', JSON.stringify(db));
@@ -37,7 +37,7 @@ window.nuevoCliente = function() {
 };
 
 window.borrarCliente = function(id, event) {
-    event.stopPropagation(); // Para que no se abra el expediente al dar a borrar
+    event.stopPropagation();
     if(confirm("¿Seguro que quieres borrar este cliente y todos sus presupuestos?")) {
         db.clientes = db.clientes.filter(c => c.id !== id);
         window.save();
@@ -101,24 +101,37 @@ window.renderHistorial = function() {
                 </div>
                 <div class="text-right font-black text-blue-600 text-sm">${parseFloat(p.total).toFixed(2)}€</div>
             </div>
-            <div class="flex flex-wrap gap-2 mt-2">
-                <button onclick="window.compartirWhatsApp(${index})" class="flex-1 bg-green-500 text-white text-[10px] font-bold py-2 rounded-lg uppercase">WhatsApp</button>
-                <button onclick="window.modificarPresupuesto(${index})" class="flex-1 bg-amber-500 text-white text-[10px] font-bold py-2 rounded-lg uppercase">✏️ Editar</button>
-                <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 px-3 rounded-lg">🗑️</button>
+            <div class="grid grid-cols-2 gap-2 mt-3">
+                <button onclick="window.compartirWhatsApp(${index})" class="bg-green-500 text-white text-[9px] font-bold py-2 rounded-lg uppercase">WhatsApp</button>
+                <button onclick="window.enviarEmail(${index})" class="bg-blue-500 text-white text-[9px] font-bold py-2 rounded-lg uppercase">Email</button>
+                <button onclick="window.modificarPresupuesto(${index})" class="bg-amber-500 text-white text-[9px] font-bold py-2 rounded-lg uppercase">✏️ Editar</button>
+                <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 py-2 rounded-lg text-[9px] font-bold uppercase text-center">Borrar 🗑️</button>
             </div>
         </div>`).reverse().join(''); 
 };
 
-// --- MODIFICAR PRESUPUESTO EXISTENTE ---
+// --- MODIFICAR PRESUPUESTO (CORREGIDO) ---
 window.modificarPresupuesto = function(index) {
     const p = clienteActual.presupuestos[index];
-    trabajoActual = JSON.parse(JSON.stringify(p)); // Copia profunda
+    trabajoActual = JSON.parse(JSON.stringify(p)); 
     editandoIndex = index;
     
     document.getElementById('num-presu-header').innerText = "EDITANDO: " + trabajoActual.lugar.toUpperCase();
-    window.renderListaMedidas();
-    window.cambiarVista('tecnico');
-    window.irAPantalla('trabajo');
+    window.renderListaMedidas(); // Dibujar las líneas que ya tenía
+    window.cambiarVista('tecnico'); // Ir a la pestaña de metros
+    window.irAPantalla('trabajo'); // Abrir el editor
+};
+
+// --- FUNCIÓN EMAIL ---
+window.enviarEmail = function(index) {
+    const p = clienteActual.presupuestos[index];
+    const asunto = encodeURIComponent(`Presupuesto Obra: ${p.lugar}`);
+    let cuerpo = `Hola ${clienteActual.nombre},\n\nAdjunto el presupuesto para la obra en ${p.lugar}:\n\n`;
+    p.lineas.forEach(l => {
+        cuerpo += `${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} x ${l.precio}€ = ${(l.cantidad*l.precio).toFixed(2)}€\n`;
+    });
+    cuerpo += `\nTOTAL FINAL: ${parseFloat(p.total).toFixed(2)}€\n\nSaludos.`;
+    window.location.href = `mailto:?subject=${asunto}&body=${encodeURIComponent(cuerpo)}`;
 };
 
 window.borrarPresupuesto = function(index) {
@@ -131,8 +144,7 @@ window.borrarPresupuesto = function(index) {
 
 window.compartirWhatsApp = function(index) {
     const p = clienteActual.presupuestos[index];
-    let msg = `*PRESUPUESTO: ${p.lugar}*\n`;
-    msg += `Cliente: ${clienteActual.nombre}\n`;
+    let msg = `*PRESUPUESTO: ${p.lugar.toUpperCase()}*\n`;
     msg += `--------------------------\n`;
     p.lineas.forEach(l => {
         msg += `${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} x ${l.precio}€ = *${(l.cantidad*l.precio).toFixed(2)}€*\n`;
@@ -179,12 +191,13 @@ window.abrirPrompt = function(tipo) {
 
 window.renderListaMedidas = function() {
     const cont = document.getElementById('resumen-medidas-pantalla');
+    if(!cont) return;
     cont.innerHTML = trabajoActual.lineas.map((l, i) => `
         <div class="flex justify-between items-center bg-white p-3 rounded-xl border mb-2 text-sm">
             <span>${l.icono} <b>${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni}</b> ${l.nombre}</span>
             <div class="flex gap-3 items-center">
                 <span class="font-bold text-blue-600">${(l.cantidad * l.precio).toFixed(2)}€</span>
-                <button onclick="window.quitarLinea(${i})" class="text-red-400">✕</button>
+                <button onclick="window.quitarLinea(${i})" class="text-red-400 font-bold px-2">✕</button>
             </div>
         </div>
     `).join('');
@@ -197,7 +210,7 @@ window.quitarLinea = function(i) {
 
 window.renderPresupuesto = function() {
     let subtotal = 0;
-    let h = `<div class="border-b pb-2 mb-4 text-xs font-bold uppercase text-slate-400">DESGLOSE: ${trabajoActual.lugar}</div>`;
+    let h = `<div class="border-b pb-2 mb-4 text-[10px] font-bold uppercase text-slate-400">DESGLOSE: ${trabajoActual.lugar}</div>`;
     trabajoActual.lineas.forEach(l => {
         subtotal += (l.cantidad * l.precio);
         h += `<div class="flex justify-between items-center mb-2 text-xs border-b border-slate-50 pb-2">
@@ -216,9 +229,9 @@ window.renderPresupuesto = function() {
 
 window.guardarTodo = function() {
     if(editandoIndex !== null) {
-        clienteActual.presupuestos[editandoIndex] = {...trabajoActual};
+        clienteActual.presupuestos[editandoIndex] = JSON.parse(JSON.stringify(trabajoActual));
     } else {
-        clienteActual.presupuestos.push({...trabajoActual});
+        clienteActual.presupuestos.push(JSON.parse(JSON.stringify(trabajoActual)));
     }
     window.save();
     window.irAPantalla('expediente');
