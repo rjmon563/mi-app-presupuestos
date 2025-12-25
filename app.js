@@ -1,11 +1,11 @@
 // 1. CONFIGURACIÓN DE RENDIMIENTOS
 const CONFIG = {
-    'tabiques': { n: 'Tabiques', i: '🧱', fPlaca: 2.10, fPerfil: 2.1, fPasta: 0.5, esM2: true },
-    'techos': { n: 'Techos', i: '🏠', fPlaca: 1.05, fPerfil: 3.2, fPasta: 0.6, esM2: true },
-    'cajones': { n: 'Cajones', i: '📦', fPlaca: 0.2, fPerfil: 1.5, fPasta: 0.1, esM2: false },
-    'tabicas': { n: 'Tabicas', i: '📐', fPlaca: 0.1, fPerfil: 1.0, fPasta: 0.1, esM2: false },
-    'cantoneras': { n: 'Cantoneras', i: '📏', fPlaca: 0, fPerfil: 0, fPasta: 0.05, esM2: false },
-    'horas': { n: 'Horas de Trabajo', i: '⏱️', fPlaca: 0, fPerfil: 0, fPasta: 0, esM2: false }
+    'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
+    'techos': { n: 'Techos', i: '🏠', uni: 'm²', esM2: true },
+    'cajones': { n: 'Cajones', i: '📦', uni: 'ml', esM2: false },
+    'tabicas': { n: 'Tabicas', i: '📐', uni: 'ml', esM2: false },
+    'cantoneras': { n: 'Cantoneras', i: '📏', uni: 'ml', esM2: false },
+    'horas': { n: 'Horas', i: '⏱️', uni: 'hrs', esM2: false }
 };
 
 // 2. BASE DE DATOS Y VARIABLES GLOBALES
@@ -234,3 +234,4 @@ window.onload = () => {
         navigator.serviceWorker.register('./sw.js');
     }
 };
+
