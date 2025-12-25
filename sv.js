@@ -1,4 +1,4 @@
-const CACHE_NAME = 'presupro-v1';
+const CACHE_NAME = 'presupro-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -26,4 +26,5 @@ self.addEventListener('fetch', (evt) => {
       return response || fetch(evt.request);
     })
   );
+
 });
