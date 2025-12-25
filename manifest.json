@@ -1,16 +1,24 @@
 {
-  "name": "PresuPro Gestión Pladur",
-  "short_name": "PresuPro",
-  "description": "App para instaladores de Pladur.",
-  "start_url": "index.html",
-  "display": "standalone",
-  "background_color": "#2563eb",
-  "theme_color": "#2563eb",
+  "short_name": "PresuProV3",
+  "name": "PresuPro V3 - Gestión Pladur",
+  "description": "Calculadora profesional para instaladores de placa de yeso laminado.",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3522/3522108.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/599/599887.png",
+      "type": "image/png",
       "sizes": "512x512",
-      "type": "image/png"
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/599/599887.png",
+      "type": "image/png",
+      "sizes": "192x192"
     }
-  ]
+  ],
+  "start_url": "./index.html",
+  "background_color": "#f1f5f9",
+  "display": "standalone",
+  "scope": "./",
+  "theme_color": "#2563eb",
+  "orientation": "portrait"
 }
