@@ -27,7 +27,6 @@ window.actualizarDash = function() {
     if(dash) dash.innerText = t.toFixed(2) + "€";
 };
 
-// --- GESTIÓN DE CLIENTES ---
 window.nuevoCliente = function() {
     const n = prompt("Nombre del cliente:");
     if(n) {
@@ -65,7 +64,6 @@ window.renderListaClientes = function() {
     window.actualizarDash();
 };
 
-// --- NAVEGACIÓN ---
 window.irAPantalla = function(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
     document.getElementById(`pantalla-${id}`).classList.remove('hidden');
@@ -74,13 +72,17 @@ window.irAPantalla = function(id) {
 
 window.cambiarVista = function(v) {
     document.querySelectorAll('.vista-trabajo').forEach(div => div.classList.add('hidden'));
-    document.getElementById(`vista-${v}`).classList.remove('hidden');
+    const target = document.getElementById(`vista-${v}`);
+    if(target) target.classList.remove('hidden');
+    
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-    document.getElementById(`tab-${v}`).classList.add('tab-active');
+    const tab = document.getElementById(`tab-${v}`);
+    if(tab) tab.classList.add('tab-active');
+    
     if(v === 'economico') window.renderPresupuesto();
+    if(v === 'tecnico') window.renderListaMedidas();
 };
 
-// --- EXPEDIENTE ---
 window.abrirExpediente = function(id) { 
     clienteActual = db.clientes.find(c => c.id === id); 
     document.getElementById('titulo-cliente').innerText = clienteActual.nombre; 
@@ -102,27 +104,30 @@ window.renderHistorial = function() {
                 <div class="text-right font-black text-blue-600 text-sm">${parseFloat(p.total).toFixed(2)}€</div>
             </div>
             <div class="grid grid-cols-2 gap-2 mt-3">
-                <button onclick="window.compartirWhatsApp(${index})" class="bg-green-500 text-white text-[9px] font-bold py-2 rounded-lg uppercase">WhatsApp</button>
+                <button onclick="window.compartirWhatsApp(${index})" class="bg-green-500 text-white text-[9px] font-bold py-2 rounded-lg uppercase font-black italic">WhatsApp</button>
                 <button onclick="window.enviarEmail(${index})" class="bg-blue-500 text-white text-[9px] font-bold py-2 rounded-lg uppercase">Email</button>
-                <button onclick="window.modificarPresupuesto(${index})" class="bg-amber-500 text-white text-[9px] font-bold py-2 rounded-lg uppercase">✏️ Editar</button>
-                <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 py-2 rounded-lg text-[9px] font-bold uppercase text-center">Borrar 🗑️</button>
+                <button onclick="window.modificarPresupuesto(${index})" class="bg-amber-500 text-white text-[9px] font-bold py-2 rounded-lg uppercase font-black italic">✏️ EDITAR</button>
+                <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 py-2 rounded-lg text-[9px] font-bold uppercase text-center font-black">BORRAR 🗑️</button>
             </div>
         </div>`).reverse().join(''); 
 };
 
-// --- MODIFICAR PRESUPUESTO (CORREGIDO) ---
+// --- MODIFICAR PRESUPUESTO (REFORZADO) ---
 window.modificarPresupuesto = function(index) {
     const p = clienteActual.presupuestos[index];
+    // Cargamos los datos en el editor
     trabajoActual = JSON.parse(JSON.stringify(p)); 
     editandoIndex = index;
     
+    // Actualizamos el nombre en la cabecera
     document.getElementById('num-presu-header').innerText = "EDITANDO: " + trabajoActual.lugar.toUpperCase();
-    window.renderListaMedidas(); // Dibujar las líneas que ya tenía
-    window.cambiarVista('tecnico'); // Ir a la pestaña de metros
-    window.irAPantalla('trabajo'); // Abrir el editor
+    
+    // IMPORTANTE: Primero cambiamos de pantalla y LUEGO dibujamos la lista
+    window.irAPantalla('trabajo'); 
+    window.cambiarVista('tecnico'); 
+    setTimeout(() => { window.renderListaMedidas(); }, 50); 
 };
 
-// --- FUNCIÓN EMAIL ---
 window.enviarEmail = function(index) {
     const p = clienteActual.presupuestos[index];
     const asunto = encodeURIComponent(`Presupuesto Obra: ${p.lugar}`);
@@ -135,7 +140,7 @@ window.enviarEmail = function(index) {
 };
 
 window.borrarPresupuesto = function(index) {
-    if(confirm("¿Borrar este presupuesto?")) {
+    if(confirm("¿Borrar este presupuesto definitivamente?")) {
         clienteActual.presupuestos.splice(index, 1);
         window.save();
         window.renderHistorial();
@@ -153,7 +158,6 @@ window.compartirWhatsApp = function(index) {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
-// --- EDITOR ---
 window.iniciarNuevaMedicion = function() {
     const lugar = prompt("¿Dónde es la obra?", "");
     if (!lugar) return;
@@ -192,12 +196,16 @@ window.abrirPrompt = function(tipo) {
 window.renderListaMedidas = function() {
     const cont = document.getElementById('resumen-medidas-pantalla');
     if(!cont) return;
+    if(trabajoActual.lineas.length === 0) {
+        cont.innerHTML = "<p class='text-center text-slate-400 py-4 text-xs'>No hay mediciones</p>";
+        return;
+    }
     cont.innerHTML = trabajoActual.lineas.map((l, i) => `
-        <div class="flex justify-between items-center bg-white p-3 rounded-xl border mb-2 text-sm">
+        <div class="flex justify-between items-center bg-white p-3 rounded-xl border mb-2 text-sm shadow-sm">
             <span>${l.icono} <b>${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni}</b> ${l.nombre}</span>
             <div class="flex gap-3 items-center">
                 <span class="font-bold text-blue-600">${(l.cantidad * l.precio).toFixed(2)}€</span>
-                <button onclick="window.quitarLinea(${i})" class="text-red-400 font-bold px-2">✕</button>
+                <button onclick="window.quitarLinea(${i})" class="text-red-400 font-bold px-2 bg-red-50 rounded">✕</button>
             </div>
         </div>
     `).join('');
