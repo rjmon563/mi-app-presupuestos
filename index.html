@@ -7,46 +7,62 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
-        }
-        .hidden { display: none; }
-        .glass-header {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-        }
-        .btn-plus {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
-            transition: all 0.2s ease;
-        }
-        .btn-plus:active { transform: scale(0.9); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
+        .hidden { display: none !important; }
+        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: 800; }
+        .glass-header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid #e2e8f0; }
+        .btn-plus { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
     </style>
 </head>
 <body class="antialiased text-slate-900">
 
-    <div id="pantalla-clientes" class="max-w-md mx-auto min-h-screen pb-24">
+    <div id="pantalla-clientes" class="max-w-md mx-auto min-h-screen">
         <header class="p-6 glass-header sticky top-0 z-20 flex justify-between items-center">
             <div>
-                <h1 class="text-[10px] font-extrabold tracking-[0.2em] text-blue-600 uppercase mb-1">Panel de Control</h1>
-                <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">APP<span class="text-blue-600">presupuestos</span></h2>
+                <h1 class="text-[10px] font-extrabold tracking-[0.2em] text-blue-600 uppercase mb-1">Panel</h1>
+                <h2 class="text-2xl font-extrabold tracking-tight">APP<span class="text-blue-600">presupuestos</span></h2>
             </div>
-            
-            <button onclick="nuevoCliente()" class="btn-plus text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
-                </svg>
-            </button>
+            <button onclick="nuevoCliente()" class="btn-plus text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg text-3xl font-bold">+</button>
         </header>
+        <div id="lista-clientes" class="p-6"></div>
+    </div>
 
-        <div class="px-6 py-4">
-            <div class="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Mis Clientes</span>
+    <div id="pantalla-expediente" class="max-w-md mx-auto min-h-screen hidden">
+        <nav class="p-6 glass-header sticky top-0 z-20 flex items-center">
+            <button onclick="irAPantalla('clientes')" class="bg-white border w-10 h-10 rounded-xl flex items-center justify-center mr-4 shadow-sm font-bold">←</button>
+            <div id="titulo-cliente" class="flex-1"></div>
+        </nav>
+        <div class="p-6">
+            <button onclick="iniciarNuevaMedicion()" class="w-full btn-plus text-white py-4 rounded-2xl font-extrabold uppercase mb-8 shadow-xl">+ Nueva Obra</button>
+            <div id="archivo-presupuestos" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <div id="pantalla-trabajo" class="max-w-md mx-auto min-h-screen hidden">
+        <header class="p-4 bg-white border-b flex justify-between items-center sticky top-0 z-20">
+            <button onclick="irAPantalla('expediente')" class="text-slate-400 font-bold p-2">✕</button>
+            <div id="num-presu-header" class="font-black text-sm text-blue-600 uppercase">OBRA</div>
+            <button onclick="guardarTodo()" class="bg-emerald-500 text-white px-6 py-2 rounded-xl font-bold text-xs uppercase">Guardar</button>
+        </header>
+        <div class="flex bg-white border-b sticky top-[61px] z-20">
+            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="tab-btn flex-1 py-4 text-xs font-black uppercase tab-active">Mediciones</button>
+            <button id="tab-economico" onclick="cambiarVista('economico')" class="tab-btn flex-1 py-4 text-xs font-black uppercase">Presupuesto</button>
+        </div>
+        <div id="vista-tecnico" class="p-6 vista-trabajo">
+            <div class="grid grid-cols-2 gap-3 mb-8" id="botones-materiales">
+                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl border text-xs font-bold text-left">🧱 Tabiques</button>
+                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl border text-xs font-bold text-left">🏠 Techos</button>
+                <button onclick="abrirPrompt('placa13')" class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-xs font-bold text-left">📄 Placa 13</button>
+                <button onclick="abrirPrompt('montante48')" class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-xs font-bold text-left">🏗️ Mont. 48</button>
             </div>
-            <div id="lista-clientes">
-                </div>
+            <div id="resumen-medidas-pantalla"></div>
+        </div>
+        <div id="vista-economico" class="p-6 hidden vista-trabajo">
+            <div id="desglose-precios" class="space-y-2"></div>
+            <div class="mt-6 pt-6 border-t-2 border-dashed flex justify-between items-center">
+                <span class="font-bold text-slate-400">TOTAL + IVA</span>
+                <span id="total-final" class="text-3xl font-black text-blue-600">0.00€</span>
+            </div>
         </div>
     </div>
 
