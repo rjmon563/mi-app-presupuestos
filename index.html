@@ -3,162 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PresuPro V3 - Profesional</title>
+    <title>PresuPro V3</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; }
+        body { font-family: -apple-system, sans-serif; background-color: #f1f5f9; }
         .hidden { display: none; }
         .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: bold; }
-        #canvasFirma { border: 2px dashed #cbd5e1; background: #fff; width: 100%; height: 160px; border-radius: 12px; touch-action: none; }
-        .card-partida { border-left: 4px solid #2563eb; background: white; padding: 12px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        input, select, textarea { font-size: 16px !important; } /* Evita zoom en iPhone */
+        input, select, textarea { font-size: 16px !important; }
     </style>
 </head>
 <body class="pb-24">
 
     <div id="pantalla-clientes" class="p-4">
         <div class="flex justify-between items-end mb-6">
-            <div>
-                <h1 class="text-2xl font-black text-blue-600 italic leading-none">PresuPro V3</h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Gestión Pladur</p>
-            </div>
+            <h1 class="text-2xl font-black text-blue-600 italic">PresuPro V3</h1>
             <div class="text-right">
-                <p class="text-[10px] font-bold text-slate-400 uppercase">Facturación Total</p>
-                <p id="dash-pendiente" class="font-black text-slate-700 text-lg">0.00€</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase">Facturación</p>
+                <p id="dash-pendiente" class="font-bold text-slate-700">0.00€</p>
             </div>
         </div>
-        
-        <input type="text" id="buscador" oninput="renderListaClientes()" placeholder="🔍 Buscar cliente..." class="w-full p-4 rounded-2xl border-none shadow-md mb-6 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-        
+        <input type="text" id="buscador" oninput="renderListaClientes()" placeholder="🔍 Buscar cliente..." class="w-full p-4 rounded-2xl border-none shadow-md mb-6 outline-none focus:ring-2 focus:ring-blue-500">
         <div id="lista-clientes" class="space-y-3"></div>
-        
-        <button onclick="nuevoCliente()" class="fixed bottom-6 right-6 bg-blue-600 text-white w-16 h-16 rounded-full text-4xl shadow-2xl font-bold active:scale-90 transition-transform flex items-center justify-center">
-            <span>+</span>
-        </button>
+        <button onclick="nuevoCliente()" class="fixed bottom-6 right-6 bg-blue-600 text-white w-16 h-16 rounded-full text-4xl shadow-xl font-bold">+</button>
     </div>
 
     <div id="pantalla-expediente" class="p-4 hidden">
-        <button onclick="irAPantalla('clientes')" class="mb-4 text-blue-600 font-bold flex items-center">
-            <span class="mr-2">←</span> Volver a Clientes
-        </button>
+        <button onclick="irAPantalla('clientes')" class="mb-4 text-blue-600 font-bold">← Volver</button>
         <h2 id="titulo-cliente" class="text-2xl font-black mb-4 text-slate-800 border-b-2 border-blue-500 pb-2"></h2>
-        
-        <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold mb-8 shadow-lg active:bg-blue-700 transition-colors">
-            + NUEVA OBRA / PRESUPUESTO
-        </button>
-
-        <p class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest px-1">Historial de Trabajos</p>
+        <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold mb-8 shadow-lg">+ NUEVA OBRA</button>
+        <p class="text-[10px] font-black text-slate-400 uppercase mb-3 px-1 text-center">Historial de Trabajos</p>
         <div id="archivo-presupuestos" class="space-y-3"></div>
     </div>
 
     <div id="pantalla-trabajo" class="hidden">
         <div class="bg-white border-b sticky top-0 z-20 shadow-sm">
             <div class="p-4 flex justify-between items-center">
-                <span id="num-presu-header" class="font-black text-blue-600 tracking-tighter"></span>
-                <button onclick="guardarTodo()" class="bg-green-500 text-white px-6 py-2 rounded-xl text-sm font-black shadow-md active:bg-green-600 transition-colors">GUARDAR</button>
+                <span id="num-presu-header" class="font-black text-blue-600"></span>
+                <button onclick="guardarTodo()" class="bg-green-500 text-white px-6 py-2 rounded-xl text-sm font-black shadow-md">GUARDAR</button>
             </div>
             <div class="flex justify-around text-[10px] font-black uppercase pb-2 text-slate-400">
-                <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="tab-btn tab-active py-2 px-6">Medición</button>
-                <button id="tab-materiales" onclick="cambiarVista('materiales')" class="tab-btn py-2 px-6">Pedido</button>
-                <button id="tab-economico" onclick="cambiarVista('economico')" class="tab-btn py-2 px-6">Económico</button>
+                <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="tab-btn tab-active py-2 px-4">Medición</button>
+                <button id="tab-materiales" onclick="cambiarVista('materiales')" class="tab-btn py-2 px-4">Pedido</button>
+                <button id="tab-economico" onclick="cambiarVista('economico')" class="tab-btn py-2 px-4">Económico</button>
             </div>
         </div>
 
         <div id="vista-tecnico" class="vista-trabajo p-4">
-            <div class="grid grid-cols-2 gap-3 mb-8">
-                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center active:bg-blue-50">
-                    <span class="text-2xl mb-1">🧱</span>
-                    <span class="text-[10px] font-bold text-slate-700 uppercase">Tabiques</span>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <span class="text-2xl mb-1">🧱</span><span class="text-[10px] font-bold text-slate-700 uppercase">Tabiques</span>
                 </button>
-                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center active:bg-blue-50">
-                    <span class="text-2xl mb-1">🏠</span>
-                    <span class="text-[10px] font-bold text-slate-700 uppercase">Techos</span>
+                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <span class="text-2xl mb-1">🏠</span><span class="text-[10px] font-bold text-slate-700 uppercase">Techos</span>
                 </button>
-                <button onclick="abrirPrompt('cajones')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center active:bg-slate-50">
-                    <span class="text-2xl mb-1">📦</span>
-                    <span class="text-[10px] font-bold text-slate-700 uppercase">Cajones</span>
+                <button onclick="abrirPrompt('cajones')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <span class="text-2xl mb-1">📦</span><span class="text-[10px] font-bold text-slate-700 uppercase">Cajones</span>
                 </button>
-                <button onclick="abrirPrompt('tabicas')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center active:bg-slate-50">
-                    <span class="text-2xl mb-1">📐</span>
-                    <span class="text-[10px] font-bold text-slate-700 uppercase">Tabicas</span>
+                <button onclick="abrirPrompt('tabicas')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <span class="text-2xl mb-1">📐</span><span class="text-[10px] font-bold text-slate-700 uppercase">Tabicas</span>
                 </button>
-                <button onclick="abrirPrompt('cantoneras')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center active:bg-slate-50">
-                    <span class="text-2xl mb-1">📏</span>
-                    <span class="text-[10px] font-bold text-slate-700 uppercase">Cantoneras</span>
+                <button onclick="abrirPrompt('cantoneras')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <span class="text-2xl mb-1">📏</span><span class="text-[10px] font-bold text-slate-700 uppercase">Cantoneras</span>
                 </button>
-                <button onclick="abrirPrompt('horas')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center active:bg-orange-50">
-                    <span class="text-2xl mb-1">⏱️</span>
-                    <span class="text-[10px] font-bold text-slate-700 uppercase">Horas</span>
+                <button onclick="abrirPrompt('horas')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <span class="text-2xl mb-1">⏱️</span><span class="text-[10px] font-bold text-slate-700 uppercase">Horas</span>
                 </button>
             </div>
-
             <div id="resumen-medidas-pantalla" class="space-y-3 mb-8"></div>
-            
-            <div class="p-5 bg-white rounded-3xl border border-slate-200 mb-20 shadow-inner">
-                <p class="text-[10px] font-black mb-3 text-slate-400 uppercase tracking-widest text-center">Firma del Cliente</p>
-                <canvas id="canvasFirma"></canvas>
-                <button onclick="limpiarFirma()" class="w-full text-[10px] text-red-500 font-black mt-3 uppercase">Borrar Firma</button>
-            </div>
         </div>
 
         <div id="vista-materiales" class="vista-trabajo p-4 hidden">
             <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-2xl border border-slate-800">
                 <h3 class="font-black border-b border-slate-700 pb-3 mb-5 text-blue-400 uppercase tracking-tighter">Resumen de Materiales</h3>
-                <div id="contenedor-pedido" class="space-y-3 text-sm font-medium"></div>
+                <div id="contenedor-pedido" class="space-y-3 text-sm"></div>
             </div>
-            <button onclick="enviarPedidoWhatsApp()" class="w-full bg-green-500 text-white p-5 rounded-2xl font-black mt-6 shadow-xl flex justify-center items-center active:scale-95 transition-transform uppercase tracking-tighter">
-                WhatsApp al Almacén
-            </button>
+            <button onclick="enviarPedidoWhatsApp()" class="w-full bg-green-500 text-white p-5 rounded-2xl font-black mt-6 shadow-xl uppercase">Enviar WhatsApp</button>
         </div>
 
         <div id="vista-economico" class="vista-trabajo p-4 hidden">
             <div class="bg-white p-5 rounded-3xl border border-slate-200 space-y-5 mb-6 shadow-sm">
-                <h3 class="font-black text-slate-800 border-b pb-2 uppercase text-xs tracking-widest">💰 Ajustes del Presupuesto</h3>
-                
+                <h3 class="font-black text-slate-800 border-b pb-2 uppercase text-xs tracking-widest">💰 Ajustes Finales</h3>
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Estado de la Obra</label>
-                    <select id="select-estado" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700 outline-none">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Estado</label>
+                    <select id="select-estado" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700">
                         <option value="Pendiente">⏳ Pendiente</option>
                         <option value="Aprobado">✅ Aprobado</option>
                         <option value="Rechazado">❌ Rechazado</option>
                     </select>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">IVA Aplicable</label>
-                        <select id="select-iva" onchange="renderPresupuesto()" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700 outline-none">
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">IVA (%)</label>
+                        <select id="select-iva" onchange="renderPresupuesto()" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700">
                             <option value="21">21% (General)</option>
                             <option value="10">10% (Reducido)</option>
-                            <option value="4">4% (Super)</option>
+                            <option value="4">4% (S. Reducido)</option>
                             <option value="0">0% (Exento)</option>
                         </select>
                     </div>
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Dto (%)</label>
-                        <input type="number" id="input-descuento" oninput="renderPresupuesto()" value="0" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700 outline-none">
+                        <input type="number" id="input-descuento" oninput="renderPresupuesto()" value="0" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700">
                     </div>
                 </div>
-
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Anticipo Recibido (€)</label>
-                    <input type="number" id="input-anticipo" oninput="renderPresupuesto()" value="0" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700 outline-none">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Anticipo (€)</label>
+                    <input type="number" id="input-anticipo" oninput="renderPresupuesto()" value="0" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700">
                 </div>
-
                 <div>
                     <label class="text-[10px] font-black text-slate-400 uppercase ml-1">📝 Observaciones</label>
-                    <textarea id="input-notas" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 text-sm font-medium outline-none" rows="3" placeholder="Ej: Incluye materiales y transporte..."></textarea>
+                    <textarea id="input-notas" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 text-sm" rows="3" placeholder="Añade notas..."></textarea>
                 </div>
             </div>
-
-            <div id="desglose-precios" class="p-5 bg-white rounded-3xl border border-slate-200 mb-6"></div>
-
+            <div id="desglose-precios" class="p-5 bg-white rounded-3xl border border-slate-200 mb-6 shadow-sm"></div>
             <div class="bg-blue-600 text-white p-6 rounded-3xl shadow-xl flex justify-between items-center">
-                <div>
-                    <p class="text-[10px] font-black uppercase opacity-80 leading-none">Total Final</p>
-                    <p class="text-[9px] italic opacity-60 mt-1">IVA e Impuestos incluidos</p>
-                </div>
+                <div><p class="text-[10px] font-black uppercase opacity-80">Total con IVA</p></div>
                 <span id="total-final" class="text-3xl font-black">0.00€</span>
             </div>
         </div>
