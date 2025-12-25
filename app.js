@@ -1,3 +1,4 @@
+// 1. CONFIGURACIÓN
 const CONFIG = {
     'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
     'techos': { n: 'Techos', i: '🏠', uni: 'm²', esM2: true },
@@ -11,6 +12,8 @@ let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [] };
 let clienteActual = null;
 let trabajoActual = { lineas: [], iva: 21, total: 0, lugar: "", fecha: "" };
 let editandoIndex = null;
+
+// --- FUNCIONES DE NAVEGACIÓN Y CLIENTES (SE MANTIENEN IGUAL QUE AYER) ---
 
 window.irAPantalla = function(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
@@ -26,7 +29,6 @@ window.cambiarVista = function(v) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
     const tab = document.getElementById(`tab-${v}`);
     if(tab) tab.classList.add('tab-active');
-    
     if(v === 'economico') window.renderPresupuesto();
     if(v === 'tecnico') window.renderListaMedidas();
 };
@@ -101,6 +103,51 @@ window.renderHistorial = function() {
         </div>`).reverse().join(''); 
 };
 
+// --- MEJORA DE SUMA CON EL SIGNO "+" ---
+
+window.abrirPrompt = function(tipo) {
+    const conf = CONFIG[tipo];
+    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
+    let cantidad = 0;
+
+    // Función auxiliar para sumar si el usuario pone "5+2+1"
+    const procesarSuma = (valor) => {
+        if (!valor) return 0;
+        return valor.toString().split('+').reduce((acc, curr) => acc + Number(curr.replace(',', '.')), 0);
+    };
+
+    if(tipo === 'techos') {
+        const ancho = procesarSuma(prompt("Ancho (ej: 4+2.5):", "0"));
+        const largo = procesarSuma(prompt("Largo (ej: 5+3):", "0"));
+        cantidad = ancho * largo;
+    } 
+    else if(tipo === 'tabicas') {
+        const largo = procesarSuma(prompt("Largo acumulado (ej: 3+2+6):", "0"));
+        const ancho = parseFloat((prompt("Ancho / Caída:", "0") || "0").replace(',', '.')) || 0;
+        cantidad = largo * ancho;
+    }
+    else if(tipo === 'cajones') {
+        const ancho = parseFloat((prompt("Ancho:", "0") || "0").replace(',', '.')) || 0;
+        const alto = parseFloat((prompt("Alto:", "0") || "0").replace(',', '.')) || 0;
+        const largo = procesarSuma(prompt("Largo total (ej: 2+2+3):", "0"));
+        cantidad = (ancho + alto) * largo;
+    }
+    else if(conf.esM2) { // Tabiques u otros m2
+        const largo = procesarSuma(prompt("Largo acumulado (ej: 5+5+2):", "0"));
+        const alto = parseFloat((prompt("Alto:", "0") || "0").replace(',', '.')) || 0;
+        cantidad = largo * alto;
+    } else { // Cantoneras, Horas, etc.
+        cantidad = procesarSuma(prompt(`Cantidad de ${conf.n} (puedes sumar con +):`, "0"));
+    }
+
+    if(cantidad > 0) {
+        trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n });
+        window.renderListaMedidas();
+    }
+};
+
+// --- RESTO DE FUNCIONES (IGUALES) ---
+
 window.modificarPresupuesto = function(index) {
     const p = clienteActual.presupuestos[index];
     if(!p) return;
@@ -120,41 +167,6 @@ window.iniciarNuevaMedicion = function() {
     document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
     window.irAPantalla('trabajo');
     window.cambiarVista('tecnico');
-};
-
-window.abrirPrompt = function(tipo) {
-    const conf = CONFIG[tipo];
-    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
-    let cantidad = 0;
-
-    if(tipo === 'techos') {
-        const ancho = (prompt("Ancho:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-        const largo = (prompt("Largo:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-        cantidad = ancho * largo;
-    } 
-    else if(tipo === 'tabicas') {
-        const largo = (prompt("Largo:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-        const ancho = parseFloat(prompt("Ancho (caída):", "0")) || 0;
-        cantidad = largo * ancho;
-    }
-    else if(tipo === 'cajones') {
-        const ancho = parseFloat(prompt("Ancho:", "0") || 0);
-        const alto = parseFloat(prompt("Alto:", "0") || 0);
-        const largo = (prompt("Largo total:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-        cantidad = (ancho + alto) * largo;
-    }
-    else if(conf.esM2) {
-        const largo = (prompt("Largo:", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-        const alto = parseFloat(prompt("Alto:", "0")) || 0;
-        cantidad = largo * alto;
-    } else {
-        cantidad = (prompt(`Cantidad de ${conf.n}:`, "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-    }
-
-    if(cantidad > 0) {
-        trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n });
-        window.renderListaMedidas();
-    }
 };
 
 window.renderListaMedidas = function() {
