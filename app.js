@@ -1,4 +1,3 @@
-
 // 1. CONFIGURACIÓN
 const CONFIG = {
     'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
@@ -18,7 +17,6 @@ let editandoIndex = null;
 const procesarSuma = (valor) => {
     if (!valor) return 0;
     return valor.toString().split('+').reduce((acc, curr) => {
-        // Cambiamos coma por punto para que el móvil no falle
         const num = Number(curr.replace(',', '.').trim());
         return acc + (isNaN(num) ? 0 : num);
     }, 0);
@@ -39,7 +37,6 @@ window.cambiarVista = function(v) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
     const tab = document.getElementById(`tab-${v}`);
     if(tab) tab.classList.add('tab-active');
-    
     if(v === 'economico') window.renderPresupuesto();
     if(v === 'tecnico') window.renderListaMedidas();
 };
@@ -51,9 +48,7 @@ window.nuevoCliente = function() {
     const f = prompt("CIF/DNI:");
     const d = prompt("Dirección:");
     const c = prompt("Ciudad/Provincia:");
-    db.clientes.push({
-        id: Date.now(), nombre: n, fiscal: f || "", direccion: d || "", ciudad: c || "", presupuestos: []
-    });
+    db.clientes.push({ id: Date.now(), nombre: n, fiscal: f || "", direccion: d || "", ciudad: c || "", presupuestos: [] });
     window.save();
 };
 
@@ -86,9 +81,7 @@ window.abrirExpediente = function(id) {
     const tituloHtml = `
         <div class="text-blue-600 font-black text-2xl uppercase tracking-tighter leading-none">Presupuesto</div>
         <div class="text-slate-800 font-bold text-xs mt-1 uppercase">${clienteActual.nombre}</div>
-        <div class="text-[9px] text-slate-400 font-normal">
-            ${clienteActual.fiscal} | ${clienteActual.direccion}
-        </div>
+        <div class="text-[9px] text-slate-400 font-normal">${clienteActual.fiscal} | ${clienteActual.direccion}</div>
     `;
     document.getElementById('titulo-cliente').innerHTML = tituloHtml; 
     window.renderHistorial(); 
@@ -108,44 +101,39 @@ window.renderHistorial = function() {
                 <div class="font-black text-blue-600 text-lg">${parseFloat(p.total).toFixed(2)}€</div>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="window.compartirWhatsApp(${index})" class="bg-green-500 text-white text-[10px] font-black py-3 rounded-xl uppercase">WhatsApp</button>
-                <button onclick="window.modificarPresupuesto(${index})" class="bg-slate-800 text-white text-[10px] font-black py-3 rounded-xl uppercase">✏️ Editar</button>
-                <button onclick="window.enviarEmail(${index})" class="bg-blue-100 text-blue-600 text-[10px] font-black py-3 rounded-xl uppercase">Email</button>
-                <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 py-3 rounded-xl text-[10px] font-black uppercase">Borrar</button>
+                <button onclick="window.compartirWhatsApp(${index})" class="bg-green-500 text-white text-[9px] font-black py-3 rounded-xl uppercase">WhatsApp</button>
+                <button onclick="window.generarPDF(${index})" class="bg-red-500 text-white text-[9px] font-black py-3 rounded-xl uppercase">Descargar PDF</button>
+                <button onclick="window.modificarPresupuesto(${index})" class="bg-slate-800 text-white text-[9px] font-black py-3 rounded-xl uppercase">✏️ Editar</button>
+                <button onclick="window.enviarEmail(${index})" class="bg-blue-100 text-blue-600 text-[9px] font-black py-3 rounded-xl uppercase">Email</button>
             </div>
         </div>`).reverse().join(''); 
 };
 
-// 5. MEDICIONES CON FÓRMULAS Y SUMA "+"
+// 5. MEDICIONES (IGUAL QUE ANTES)
 window.abrirPrompt = function(tipo) {
     const conf = CONFIG[tipo];
     const precio = parseFloat((prompt(`Precio para ${conf.n}:`, "0") || "0").replace(',', '.')) || 0;
     let cantidad = 0;
-
     if(tipo === 'techos') {
-        const ancho = procesarSuma(prompt("Ancho (puedes sumar 4+2.5):", "0"));
-        const largo = procesarSuma(prompt("Largo (puedes sumar 5+3):", "0"));
+        const ancho = procesarSuma(prompt("Ancho:", "0"));
+        const largo = procesarSuma(prompt("Largo:", "0"));
         cantidad = ancho * largo;
-    } 
-    else if(tipo === 'tabicas') {
-        const largo = procesarSuma(prompt("Largo acumulado (ej: 3+2+6):", "0"));
+    } else if(tipo === 'tabicas') {
+        const largo = procesarSuma(prompt("Largo acumulado:", "0"));
         const ancho = parseFloat((prompt("Ancho / Caída:", "0") || "0").replace(',', '.')) || 0;
         cantidad = largo * ancho;
-    }
-    else if(tipo === 'cajones') {
+    } else if(tipo === 'cajones') {
         const ancho = parseFloat((prompt("Ancho:", "0") || "0").replace(',', '.')) || 0;
         const alto = parseFloat((prompt("Alto:", "0") || "0").replace(',', '.')) || 0;
-        const largo = procesarSuma(prompt("Largo total (ej: 2+2+3):", "0"));
+        const largo = procesarSuma(prompt("Largo total:", "0"));
         cantidad = (ancho + alto) * largo;
-    }
-    else if(conf.esM2) {
+    } else if(conf.esM2) {
         const largo = procesarSuma(prompt("Largo acumulado:", "0"));
         const alto = parseFloat((prompt("Alto:", "0") || "0").replace(',', '.')) || 0;
         cantidad = largo * alto;
     } else {
-        cantidad = procesarSuma(prompt(`Cantidad de ${conf.n} (puedes sumar):`, "0"));
+        cantidad = procesarSuma(prompt(`Cantidad de ${conf.n}:`, "0"));
     }
-
     if(cantidad > 0) {
         trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n });
         window.renderListaMedidas();
@@ -155,10 +143,6 @@ window.abrirPrompt = function(tipo) {
 window.renderListaMedidas = function() {
     const cont = document.getElementById('resumen-medidas-pantalla');
     if(!cont) return;
-    if(!trabajoActual.lineas || trabajoActual.lineas.length === 0) {
-        cont.innerHTML = "<p class='text-center text-slate-400 py-10 text-xs italic font-bold'>No hay metros añadidos</p>";
-        return;
-    }
     cont.innerHTML = trabajoActual.lineas.map((l, i) => `
         <div class="flex justify-between items-center bg-white p-4 rounded-2xl border mb-3 shadow-sm">
             <div class="text-xs">
@@ -178,16 +162,7 @@ window.renderPresupuesto = function() {
     const totalFinal = subtotal * 1.21;
     document.getElementById('desglose-precios').innerHTML = `
         <div class="text-[10px] font-black text-blue-500 mb-3 uppercase tracking-widest italic">${trabajoActual.lugar}</div>
-        ${trabajoActual.lineas.map(l => `
-            <div class="border-b border-slate-50 py-3">
-                <div class="flex justify-between text-xs font-black uppercase text-slate-700">
-                    <span>${l.icono} ${l.nombre}</span>
-                    <span>${(l.cantidad*l.precio).toFixed(2)}€</span>
-                </div>
-                <div class="text-[9px] text-slate-400 font-bold mt-1 uppercase">
-                    Detalle: ${l.cantidad.toFixed(2)} x ${l.precio.toFixed(2)}€
-                </div>
-            </div>`).join('')}
+        ${trabajoActual.lineas.map(l => `<div class="border-b border-slate-50 py-3 flex justify-between text-xs font-black uppercase text-slate-700"><span>${l.icono} ${l.nombre}</span><span>${(l.cantidad*l.precio).toFixed(2)}€</span></div>`).join('')}
     `;
     document.getElementById('total-final').innerText = totalFinal.toFixed(2) + "€";
     trabajoActual.total = totalFinal;
@@ -195,24 +170,17 @@ window.renderPresupuesto = function() {
 
 // 6. GUARDAR Y COMPARTIR
 window.guardarTodo = function() {
-    if(editandoIndex !== null) {
-        clienteActual.presupuestos[editandoIndex] = JSON.parse(JSON.stringify(trabajoActual));
-    } else {
-        clienteActual.presupuestos.push(JSON.parse(JSON.stringify(trabajoActual)));
-    }
+    if(editandoIndex !== null) clienteActual.presupuestos[editandoIndex] = JSON.parse(JSON.stringify(trabajoActual));
+    else clienteActual.presupuestos.push(JSON.parse(JSON.stringify(trabajoActual)));
     window.save();
     window.irAPantalla('expediente');
 };
 
-window.save = function() {
-    localStorage.setItem('presupro_v3', JSON.stringify(db));
-    window.renderListaClientes();
-};
+window.save = function() { localStorage.setItem('presupro_v3', JSON.stringify(db)); window.renderListaClientes(); };
 
 window.compartirWhatsApp = function(index) {
     const p = clienteActual.presupuestos[index];
-    let msg = `*PRESUPUESTO: ${p.lugar.toUpperCase()}*\n`;
-    msg += `Cliente: ${clienteActual.nombre}\n\n`;
+    let msg = `*PRESUPUESTO: ${p.lugar.toUpperCase()}*\nCliente: ${clienteActual.nombre}\n\n`;
     p.lineas.forEach(l => msg += `${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} x ${l.precio}€ = ${(l.cantidad*l.precio).toFixed(2)}€\n`);
     msg += `\n*TOTAL CON IVA: ${parseFloat(p.total).toFixed(2)}€*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
@@ -220,12 +188,10 @@ window.compartirWhatsApp = function(index) {
 
 window.enviarEmail = function(index) {
     const p = clienteActual.presupuestos[index];
-    const asunto = `PRESUPUESTO: ${p.lugar.toUpperCase()} - ${clienteActual.nombre}`;
-    let cuerpo = `Hola,\n\nAdjunto el detalle del presupuesto para ${p.lugar.toUpperCase()}:\n\n`;
-    p.lineas.forEach(l => {
-        cuerpo += `- ${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)} ${CONFIG[l.tipo].uni} x ${l.precio}€ = ${(l.cantidad*l.precio).toFixed(2)}€\n`;
-    });
-    cuerpo += `\nTOTAL CON IVA: ${parseFloat(p.total).toFixed(2)}€\n\nQuedamos a su disposición.`;
+    const asunto = `PRESUPUESTO: ${p.lugar.toUpperCase()}`;
+    let cuerpo = `Detalle del presupuesto para ${p.lugar}:\n\n`;
+    p.lineas.forEach(l => cuerpo += `- ${l.nombre}: ${l.cantidad.toFixed(2)} x ${l.precio}€ = ${(l.cantidad*l.precio).toFixed(2)}€\n`);
+    cuerpo += `\nTOTAL CON IVA: ${parseFloat(p.total).toFixed(2)}€`;
     window.location.href = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
 };
 
@@ -247,6 +213,50 @@ window.iniciarNuevaMedicion = function() {
     document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
     window.irAPantalla('trabajo');
     window.cambiarVista('tecnico');
+};
+
+// NUEVA FUNCIÓN PDF (INDEPENDIENTE)
+window.generarPDF = function(index) {
+    const p = clienteActual.presupuestos[index];
+    const elemento = document.createElement('div');
+    elemento.style.padding = '40px';
+    elemento.style.fontFamily = 'Arial, sans-serif';
+    
+    let html = `
+        <h1 style="color: #2563eb; text-align: center;">PRESUPUESTO</h1>
+        <div style="margin-bottom: 20px;">
+            <p><strong>Cliente:</strong> ${clienteActual.nombre}</p>
+            <p><strong>DNI/CIF:</strong> ${clienteActual.fiscal}</p>
+            <p><strong>Obra:</strong> ${p.lugar.toUpperCase()}</p>
+            <p><strong>Fecha:</strong> ${p.fecha}</p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr style="background: #f1f5f9;">
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Concepto</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Cantidad</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Precio</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Total</th>
+            </tr>
+    `;
+    p.lineas.forEach(l => {
+        html += `
+            <tr>
+                <td style="padding: 10px; border: 1px solid #ddd;">${l.nombre}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${l.cantidad.toFixed(2)} ${CONFIG[l.tipo].uni}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${l.precio}€</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${(l.cantidad * l.precio).toFixed(2)}€</td>
+            </tr>
+        `;
+    });
+    html += `
+        </table>
+        <div style="text-align: right; margin-top: 30px; font-size: 18px;">
+            <p><strong>TOTAL (IVA INCLUIDO): ${parseFloat(p.total).toFixed(2)}€</strong></p>
+        </div>
+    `;
+    elemento.innerHTML = html;
+    const opt = { margin: 0.5, filename: `Presupuesto_${p.lugar}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+    html2pdf().set(opt).from(elemento).save();
 };
 
 window.borrarPresupuesto = function(index) {
