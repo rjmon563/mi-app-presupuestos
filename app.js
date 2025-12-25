@@ -1,3 +1,4 @@
+// CONFIGURACIÓN DE SISTEMAS
 const SISTEMAS = {
     'tabique_estandar': { nombre: 'Tabique Blanca', placa: 'Placa 13mm Blanca', factorPlaca: 1.05, factorPerfil: 2.1, factorPasta: 0.5 },
     'tabique_hidro': { nombre: 'Tabique Verde', placa: 'Placa 13mm Verde', factorPlaca: 1.05, factorPerfil: 2.1, factorPasta: 0.5 },
@@ -5,25 +6,34 @@ const SISTEMAS = {
     'techo_continuo': { nombre: 'Techo', placa: 'Placa 13mm Blanca', factorPlaca: 1.05, factorPerfil: 3.2, factorPasta: 0.6 }
 };
 
+// BASE DE DATOS LOCAL
 let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [], contador: 1 };
 let clienteActual = null;
 let trabajoActual = { lineas: [], observaciones: "", total: 0 };
 
+// --- NAVEGACIÓN ---
 function irAPantalla(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
-    document.getElementById(`pantalla-${id}`).classList.remove('hidden');
+    const target = document.getElementById(`pantalla-${id}`);
+    if(target) target.classList.remove('hidden');
     if(id === 'clientes') renderListaClientes();
 }
 
 function cambiarVista(v) {
     document.querySelectorAll('.vista-trabajo').forEach(div => div.classList.add('hidden'));
-    document.getElementById(`vista-${v}`).classList.remove('hidden');
-    document.querySelectorAll('.flex > button').forEach(b => b.classList.remove('tab-active'));
-    document.getElementById(`tab-${v}`).classList.add('tab-active');
+    const vista = document.getElementById(`vista-${v}`);
+    if(vista) vista.classList.remove('hidden');
+    
+    // Gestión de pestañas (tabs)
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+    const tab = document.getElementById(`tab-${v}`);
+    if(tab) tab.classList.add('tab-active');
+
     if(v === 'materiales') renderCalculadora();
     if(v === 'economico') renderPresupuesto();
 }
 
+// --- GESTIÓN DE CLIENTES ---
 function nuevoCliente() {
     const n = prompt("Nombre del cliente:");
     if(!n) return;
@@ -32,12 +42,14 @@ function nuevoCliente() {
 }
 
 function renderListaClientes() {
-    const buscar = document.getElementById('buscador').value.toLowerCase();
-    const lista = db.clientes.filter(c => c.nombre.toLowerCase().includes(buscar));
+    const buscador = document.getElementById('buscador');
+    const filtro = buscador ? buscador.value.toLowerCase() : "";
+    const lista = db.clientes.filter(c => c.nombre.toLowerCase().includes(filtro));
+    
     document.getElementById('lista-clientes').innerHTML = lista.map(c => `
-        <div onclick="abrirExpediente(${c.id})" class="card flex justify-between items-center">
+        <div onclick="abrirExpediente(${c.id})" class="card flex justify-between items-center bg-white p-4 mb-2 rounded-xl border shadow-sm">
             <span class="font-bold">${c.nombre}</span>
-            <span class="text-blue-500">→</span>
+            <span class="text-blue-500 font-bold">VER →</span>
         </div>
     `).join('');
     actualizarDash();
@@ -52,20 +64,29 @@ function abrirExpediente(id) {
 
 function renderHistorial() {
     document.getElementById('archivo-presupuestos').innerHTML = clienteActual.presupuestos.map(p => `
-        <div class="bg-white p-3 rounded-xl border flex justify-between">
-            <div><div class="text-[10px] font-bold text-blue-500">${p.numero}</div><div>${p.fecha}</div></div>
-            <div class="font-black">${p.total.toFixed(2)}€</div>
+        <div class="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
+            <div>
+                <div class="text-[10px] font-bold text-blue-500 uppercase">${p.numero}</div>
+                <div class="text-sm text-slate-500">${p.fecha}</div>
+            </div>
+            <div class="font-black text-slate-700">${parseFloat(p.total).toFixed(2)}€</div>
         </div>
     `).join('');
 }
 
+// --- MEDICIÓN Y TRABAJO ---
 function iniciarNuevaMedicion() {
-    trabajoActual = { numero: `PRE-2025-${String(db.contador).padStart(3,'0')}`, lineas: [], observaciones: "" };
+    trabajoActual = { 
+        numero: `PRE-2025-${String(db.contador).padStart(3,'0')}`, 
+        lineas: [], 
+        observaciones: "",
+        total: 0 
+    };
     document.getElementById('num-presu-header').innerText = trabajoActual.numero;
     document.getElementById('resumen-medidas-pantalla').innerHTML = "";
     cambiarVista('tecnico');
     irAPantalla('trabajo');
-    setTimeout(iniciarCanvas, 200);
+    setTimeout(iniciarCanvas, 300); // Esperar a que el HTML cargue para el canvas
 }
 
 function agregarLinea() {
@@ -73,16 +94,24 @@ function agregarLinea() {
     const med = document.getElementById('input-medida').value;
     const alt = parseFloat(document.getElementById('input-alto').value) || 0;
     const pre = parseFloat(document.getElementById('input-precio').value) || 0;
-    const m2 = med.split('+').reduce((a,b) => a + Number(b||0), 0) * alt;
+    
+    // Suma automática de medidas compuestas (ej: 2+3+4)
+    const anchoCalculado = med.split('+').reduce((a,b) => a + Number(b||0), 0);
+    const m2 = anchoCalculado * alt;
+
+    if(m2 <= 0) return alert("Introduce medidas válidas");
 
     trabajoActual.lineas.push({ sistema: sis, med, m2, precio: pre });
-    document.getElementById('resumen-medidas-pantalla').innerHTML += `
-        <div class="bg-white p-2 rounded border text-xs flex justify-between mb-1">
+    
+    const itemHtml = `
+        <div class="bg-white p-2 rounded border-l-4 border-blue-500 text-xs flex justify-between mb-1 shadow-sm">
             <span>${SISTEMAS[sis].nombre} (${med}x${alt})</span>
             <span class="font-bold">${m2.toFixed(2)}m²</span>
         </div>`;
+    document.getElementById('resumen-medidas-pantalla').insertAdjacentHTML('beforeend', itemHtml);
 }
 
+// --- CÁLCULOS DE MATERIALES ---
 function renderCalculadora() {
     const mats = {};
     trabajoActual.lineas.forEach(l => {
@@ -94,50 +123,80 @@ function renderCalculadora() {
     });
     
     let h = "";
-    for(let [m, c] of Object.entries(mats)) h += `<div class="flex justify-between"><span>${m}</span><span class="font-bold text-white">${c}</span></div>`;
-    document.getElementById('contenedor-pedido').innerHTML = h || "Sin datos";
+    for(let [m, c] of Object.entries(mats)) {
+        h += `<div class="flex justify-between border-b border-slate-700 py-1"><span>${m}</span><span class="font-bold text-blue-400">${c}</span></div>`;
+    }
+    document.getElementById('contenedor-pedido').innerHTML = h || "Añada medidas primero";
 }
 
 function renderPresupuesto() {
     let sub = 0;
     document.getElementById('desglose-precios').innerHTML = trabajoActual.lineas.map(l => {
-        sub += (l.m2 * l.precio);
-        return `<div class="flex justify-between text-sm"><span>${SISTEMAS[l.sistema].nombre} (${l.m2.toFixed(2)}m²)</span><span>${(l.m2*l.precio).toFixed(2)}€</span></div>`;
+        const totalLinea = l.m2 * l.precio;
+        sub += totalLinea;
+        return `<div class="flex justify-between text-sm py-1 border-b">
+                    <span>${SISTEMAS[l.sistema].nombre} (${l.m2.toFixed(2)}m²)</span>
+                    <span class="font-bold">${totalLinea.toFixed(2)}€</span>
+                </div>`;
     }).join('');
+    
     trabajoActual.total = sub * 1.21;
     document.getElementById('total-final').innerText = trabajoActual.total.toFixed(2) + "€";
 }
 
-// FIRMA
+// --- FIRMA TÁCTIL (Corregida) ---
 let canvas, ctx, dibujando = false;
 function iniciarCanvas() {
     canvas = document.getElementById('canvasFirma');
+    if(!canvas) return;
     ctx = canvas.getContext('2d');
     canvas.width = canvas.offsetWidth;
-    const p = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left, y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top }; };
-    canvas.addEventListener('touchstart', (e) => { dibujando=true; ctx.beginPath(); const pos=p(e); ctx.moveTo(pos.x, pos.y); });
+    canvas.height = 180;
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 2;
+
+    const p = (e) => { 
+        const r = canvas.getBoundingClientRect(); 
+        const ev = e.touches ? e.touches[0] : e;
+        return { x: ev.clientX - r.left, y: ev.clientY - r.top }; 
+    };
+
+    canvas.addEventListener('touchstart', (e) => { dibujando=true; ctx.beginPath(); const pos=p(e); ctx.moveTo(pos.x, pos.y); e.preventDefault(); });
     canvas.addEventListener('touchmove', (e) => { if(!dibujando) return; const pos=p(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); e.preventDefault(); });
     window.addEventListener('touchend', () => dibujando=false);
 }
-function limpiarFirma() { ctx.clearRect(0,0,canvas.width,canvas.height); }
+function limpiarFirma() { if(ctx) ctx.clearRect(0,0,canvas.width,canvas.height); }
 
+// --- ACCIONES FINALES ---
 function enviarPedidoWhatsApp() {
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(document.getElementById('contenedor-pedido').innerText)}`);
+    const texto = "PEDIDO MATERIAL:\n" + document.getElementById('contenedor-pedido').innerText;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`);
 }
 
-function generarPDF_Oficial() {
-    const c = `<h1>Presupuesto ${trabajoActual.numero}</h1><p>Cliente: ${clienteActual.nombre}</p><h3>TOTAL: ${trabajoActual.total.toFixed(2)}€</h3>`;
-    html2pdf().from(c).save();
+function save() { 
+    localStorage.setItem('presupro_v3', JSON.stringify(db)); 
+    renderListaClientes(); 
 }
 
-function save() { localStorage.setItem('presupro_v3', JSON.stringify(db)); renderListaClientes(); }
 function guardarTodo() { 
     trabajoActual.fecha = new Date().toLocaleDateString();
-    clienteActual.presupuestos.push(trabajoActual);
-    db.contador++; save(); irAPantalla('expediente'); 
+    clienteActual.presupuestos.push({...trabajoActual}); // Copia profunda
+    db.contador++; 
+    save(); 
+    irAPantalla('expediente'); 
 }
+
 function actualizarDash() {
-    let t = 0; db.clientes.forEach(c => c.presupuestos.forEach(p => t += p.total));
-    document.getElementById('dash-pendiente').innerText = t.toFixed(2) + "€";
+    let t = 0; 
+    db.clientes.forEach(c => c.presupuestos.forEach(p => t += p.total));
+    const dash = document.getElementById('dash-pendiente');
+    if(dash) dash.innerText = t.toFixed(2) + "€";
 }
-window.onload = () => renderListaClientes();
+
+window.onload = () => {
+    renderListaClientes();
+    // Registrar Service Worker si existe el archivo sw.js
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+};
