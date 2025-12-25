@@ -2,156 +2,107 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <link rel="manifest" href="manifest.json">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PresuPro V3</title>
+    <title>Aisladur Presupuestos</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: 900; }
         .hidden { display: none; }
-        .tab-active { border-bottom: 4px solid #3b82f6; color: #3b82f6; font-weight: 900; }
-        body { -webkit-user-select: none; user-select: none; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        input, textarea { -webkit-user-select: text; user-select: text; }
+        button:active { transform: scale(0.95); }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="antialiased text-slate-900">
 
-    <div id="pantalla-clientes" class="min-h-screen p-4">
-        <header class="mb-6">
-            <h1 class="text-3xl font-black text-slate-900 tracking-tighter">PresuPro <span class="text-blue-600">V3</span></h1>
-            <p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Control de Obra y Presupuestos</p>
+    <div id="pantalla-clientes" class="max-w-md mx-auto min-h-screen pb-24">
+        <header class="p-6 bg-white border-b sticky top-0 z-10 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter text-blue-600 italic">AISLADUR</h1>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gestión de Clientes</p>
+            </div>
+            <button onclick="nuevoCliente()" class="bg-blue-600 text-white w-12 h-12 rounded-2xl shadow-lg shadow-blue-200 flex items-center justify-center text-2xl font-bold">+</button>
         </header>
 
-        <div class="bg-blue-600 rounded-3xl p-6 text-white shadow-xl mb-6">
-            <p class="text-blue-100 text-xs font-bold uppercase">Total Pendiente</p>
-            <div id="dash-pendiente" class="text-4xl font-black">0.00€</div>
-        </div>
-
-        <input type="text" id="buscador" oninput="renderListaClientes()" placeholder="Buscar cliente..." class="w-full p-4 rounded-2xl border-none shadow-sm mb-4 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-
-        <div id="lista-clientes" class="space-y-3 pb-24">
-            </div>
-
-        <button onclick="nuevoCliente()" class="fixed bottom-6 right-6 bg-blue-600 text-white w-16 h-16 rounded-full text-4xl shadow-xl font-bold flex items-center justify-center">+</button>
-    </div>
-
-    <div id="pantalla-expediente" class="min-h-screen p-4 hidden">
-        <div class="flex items-center justify-between mb-6">
-            <button onclick="irAPantalla('clientes')" class="text-slate-400 font-bold">← Volver</button>
-            <h2 id="titulo-cliente" class="text-xl font-black text-slate-800">Cliente</h2>
-            <div class="w-10"></div>
-        </div>
-
-        <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black shadow-lg mb-8 uppercase tracking-wider text-sm">
-            + Nueva Obra / Medición
-        </button>
-
-        <h3 class="font-black text-slate-400 text-[10px] uppercase mb-4 tracking-widest">Historial de Trabajos</h3>
-        <div id="archivo-presupuestos" class="space-y-3">
+        <div id="lista-clientes" class="p-4">
             </div>
     </div>
 
-    <div id="pantalla-trabajo" class="min-h-screen bg-slate-50 hidden flex flex-col">
-        <div class="bg-white p-4 border-b flex justify-between items-center sticky top-0 z-10">
-            <button onclick="irAPantalla('expediente')" class="text-blue-600 font-bold text-sm">Cerrar</button>
-            <div class="text-center">
-                <div id="num-presu-header" class="text-[10px] font-black text-slate-400 uppercase">PRE-000</div>
-                <div class="text-xs font-bold">Configuración de Obra</div>
-            </div>
-            <button onclick="guardarTodo()" class="bg-green-500 text-white px-4 py-1.5 rounded-lg font-bold text-xs">GUARDAR</button>
+    <div id="pantalla-expediente" class="max-w-md mx-auto min-h-screen pb-24 hidden">
+        <nav class="p-4 flex items-center bg-white border-b sticky top-0 z-10">
+            <button onclick="irAPantalla('clientes')" class="text-slate-400 font-bold mr-4 text-xl">←</button>
+            <div id="titulo-cliente" class="flex-1">
+                </div>
+        </nav>
+
+        <div class="p-4">
+            <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-wide shadow-xl shadow-blue-100 mb-6">
+                + Nueva Obra / Pedido
+            </button>
+            
+            <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest px-1">Historial de Trabajos</h3>
+            <div id="archivo-presupuestos">
+                </div>
         </div>
+    </div>
+
+    <div id="pantalla-trabajo" class="max-w-md mx-auto min-h-screen pb-32 hidden">
+        <header class="p-4 bg-white border-b flex justify-between items-center sticky top-0 z-10">
+            <button onclick="irAPantalla('expediente')" class="text-slate-400 font-bold text-xl font-black">✕</button>
+            <div id="num-presu-header" class="font-black text-sm uppercase tracking-widest">NUEVA OBRA</div>
+            <button onclick="guardarTodo()" class="bg-green-500 text-white px-5 py-2 rounded-xl font-black text-xs uppercase">Guardar</button>
+        </header>
 
         <div class="flex bg-white border-b sticky top-[61px] z-10">
-            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="flex-1 py-3 text-[10px] font-bold uppercase tab-active tab-btn">👷 Técnico</button>
-            <button id="tab-economico" onclick="cambiarVista('economico')" class="flex-1 py-3 text-[10px] font-bold uppercase tab-btn">💰 Económico</button>
-            <button id="tab-materiales" onclick="cambiarVista('materiales')" class="flex-1 py-3 text-[10px] font-bold uppercase tab-btn">🧱 Pedido</button>
+            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="flex-1 py-4 text-xs font-bold uppercase tracking-widest tab-active">Mediciones</button>
+            <button id="tab-economico" onclick="cambiarVista('economico')" class="flex-1 py-4 text-xs font-bold uppercase tracking-widest">Presupuesto</button>
         </div>
 
-        <div id="vista-tecnico" class="vista-trabajo p-4">
-            <div class="grid grid-cols-3 gap-3 mb-6">
-                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center">
-                    <span class="text-2xl mb-1">🧱</span><span class="text-[9px] font-black uppercase">Tabique</span>
-                </button>
-                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center">
-                    <span class="text-2xl mb-1">🏠</span><span class="text-[9px] font-black uppercase">Techo</span>
-                </button>
-                <button onclick="abrirPrompt('cajones')" class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center">
-                    <span class="text-2xl mb-1">📦</span><span class="text-[9px] font-black uppercase">Cajón</span>
-                </button>
-                <button onclick="abrirPrompt('tabicas')" class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center">
-                    <span class="text-2xl mb-1">📐</span><span class="text-[9px] font-black uppercase">Tabica</span>
-                </button>
-                <button onclick="abrirPrompt('cantoneras')" class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center">
-                    <span class="text-2xl mb-1">📏</span><span class="text-[9px] font-black uppercase">Cantonera</span>
-                </button>
-                <button onclick="abrirPrompt('horas')" class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center">
-                    <span class="text-2xl mb-1">⏱️</span><span class="text-[9px] font-black uppercase">Horas</span>
-                </button>
-            </div>
-            <div id="resumen-medidas-pantalla" class="space-y-2">
-                </div>
-        </div>
-
-        <div id="vista-economico" class="vista-trabajo p-4 hidden">
-            <div class="bg-white rounded-2xl p-4 border mb-4 shadow-sm">
-                <div id="desglose-precios" class="space-y-2 mb-4">
-                    </div>
-                <div class="grid grid-cols-2 gap-3 border-t pt-4">
-                    <div>
-                        <label class="text-[9px] font-bold text-slate-400 uppercase">IVA %</label>
-                        <select id="select-iva" onchange="renderPresupuesto()" class="w-full bg-slate-100 p-2 rounded-lg text-xs font-bold outline-none">
-                            <option value="21">21%</option>
-                            <option value="10">10%</option>
-                            <option value="0">0%</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-bold text-slate-400 uppercase">Estado</label>
-                        <select id="select-estado" class="w-full bg-slate-100 p-2 rounded-lg text-xs font-bold outline-none">
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Aceptado">Aceptado</option>
-                            <option value="Cobrado">Cobrado</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Anticipo recibido (€)</label>
-                    <input type="number" id="input-anticipo" oninput="renderPresupuesto()" value="0" class="w-full bg-slate-100 p-2 rounded-lg text-xs font-bold outline-none">
-                </div>
-                <div class="mt-6 bg-slate-900 text-white p-4 rounded-xl flex justify-between items-center">
-                    <span class="font-bold">TOTAL FINAL</span>
-                    <span id="total-final" class="text-2xl font-black text-blue-400">0.00€</span>
+        <div id="vista-tecnico" class="p-4 vista-trabajo">
+            
+            <div class="mb-6">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Trabajos y Mano de Obra</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="abrirPrompt('tabiques')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">🧱 Tabiques</button>
+                    <button onclick="abrirPrompt('techos')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">🏠 Techos</button>
+                    <button onclick="abrirPrompt('cajones')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">📦 Cajones</button>
+                    <button onclick="abrirPrompt('tabicas')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">📐 Tabicas</button>
+                    <button onclick="abrirPrompt('cantoneras')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">📏 Cantoneras</button>
+                    <button onclick="abrirPrompt('horas')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">⏱️ Horas</button>
                 </div>
             </div>
+
+            <div class="mb-6">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Materiales / Pedidos</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="abrirPrompt('placa13')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">📄 Placa 13</button>
+                    <button onclick="abrirPrompt('montante48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🏗️ Mont. 48</button>
+                    <button onclick="abrirPrompt('montante70')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🏗️ Mont. 70</button>
+                    <button onclick="abrirPrompt('canal48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🛤️ Canal 48</button>
+                    <button onclick="abrirPrompt('canal70')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🛤️ Canal 70</button>
+                    <button onclick="abrirPrompt('tc48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">📏 TC 48</button>
+                    <button onclick="abrirPrompt('cuelgues')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">⚓ Cuelgues</button>
+                    <button onclick="abrirPrompt('perfilU')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">📐 Perfil U</button>
+                    <button onclick="abrirPrompt('perfilClick')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🖱️ Click</button>
+                </div>
+            </div>
+
+            <div id="resumen-medidas-pantalla" class="mt-4">
+                </div>
         </div>
 
-        <div id="vista-materiales" class="vista-trabajo p-4 hidden">
-            <div class="bg-slate-800 rounded-3xl p-6 text-white shadow-xl">
-                <div class="mb-4">
-                    <label class="text-[10px] text-slate-400 font-bold uppercase">Cálculo de materiales para:</label>
-                    <select id="selector-modo-material" onchange="renderCalculadora()" class="w-full bg-slate-700 p-3 rounded-xl mt-1 text-sm outline-none border-none font-bold">
-                        <option value="con">Suministro y Colocación</option>
-                        <option value="sin">Solo Mano de Obra</option>
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <select id="tipo-placa" onchange="renderCalculadora()" class="bg-slate-700 p-3 rounded-xl text-xs border-none outline-none">
-                        <option value="Placa STD 13">Placa STD 13</option>
-                        <option value="Placa STD 15">Placa STD 15</option>
-                        <option value="Placa WA (Verde)">Placa WA (Verde)</option>
-                        <option value="Placa FOC (Rosa)">Placa FOC (Rosa)</option>
-                    </select>
-                    <select id="tipo-pasta" onchange="renderCalculadora()" class="bg-slate-700 p-3 rounded-xl text-xs border-none outline-none">
-                        <option value="Pasta Secado 24h">Secado 24h</option>
-                        <option value="Pasta Fraguado 1h">Fraguado 1h</option>
-                        <option value="Pasta Agarre">Pasta Agarre</option>
-                    </select>
-                </div>
-                <div id="contenedor-pedido" class="space-y-4">
+        <div id="vista-economico" class="p-6 hidden vista-trabajo">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border mb-6">
+                <div id="desglose-precios" class="space-y-4">
                     </div>
+                <div class="border-t-2 border-dashed mt-6 pt-6 flex justify-between items-center">
+                    <span class="font-black text-slate-400 uppercase text-xs">Total con IVA</span>
+                    <span id="total-final" class="text-3xl font-black text-blue-600 tracking-tighter">0.00€</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="app.js?v=final"></script>
+    <script src="app.js"></script>
 </body>
 </html>
