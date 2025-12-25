@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <link rel="manifest" href="manifest.json">
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PresuPro V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -52,79 +51,7 @@
 
         <div id="vista-tecnico" class="vista-trabajo p-4">
             <div class="grid grid-cols-2 gap-3 mb-6">
-                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                    <span class="text-2xl mb-1">🧱</span><span class="text-[10px] font-bold text-slate-700 uppercase">Tabiques</span>
-                </button>
-                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                    <span class="text-2xl mb-1">🏠</span><span class="text-[10px] font-bold text-slate-700 uppercase">Techos</span>
-                </button>
-                <button onclick="abrirPrompt('cajones')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                    <span class="text-2xl mb-1">📦</span><span class="text-[10px] font-bold text-slate-700 uppercase">Cajones</span>
-                </button>
-                <button onclick="abrirPrompt('tabicas')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                    <span class="text-2xl mb-1">📐</span><span class="text-[10px] font-bold text-slate-700 uppercase">Tabicas</span>
-                </button>
-                <button onclick="abrirPrompt('cantoneras')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                    <span class="text-2xl mb-1">📏</span><span class="text-[10px] font-bold text-slate-700 uppercase">Cantoneras</span>
-                </button>
-                <button onclick="abrirPrompt('horas')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                    <span class="text-2xl mb-1">⏱️</span><span class="text-[10px] font-bold text-slate-700 uppercase">Horas</span>
-                </button>
-            </div>
-            <div id="resumen-medidas-pantalla" class="space-y-3 mb-8"></div>
-        </div>
-
-        <div id="vista-materiales" class="vista-trabajo p-4 hidden">
-            <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-2xl border border-slate-800">
-                <h3 class="font-black border-b border-slate-700 pb-3 mb-5 text-blue-400 uppercase tracking-tighter">Resumen de Materiales</h3>
-                <div id="contenedor-pedido" class="space-y-3 text-sm"></div>
-            </div>
-            <button onclick="enviarPedidoWhatsApp()" class="w-full bg-green-500 text-white p-5 rounded-2xl font-black mt-6 shadow-xl uppercase">Enviar WhatsApp</button>
-        </div>
-
-        <div id="vista-economico" class="vista-trabajo p-4 hidden">
-            <div class="bg-white p-5 rounded-3xl border border-slate-200 space-y-5 mb-6 shadow-sm">
-                <h3 class="font-black text-slate-800 border-b pb-2 uppercase text-xs tracking-widest">💰 Ajustes Finales</h3>
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Estado</label>
-                    <select id="select-estado" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700">
-                        <option value="Pendiente">⏳ Pendiente</option>
-                        <option value="Aprobado">✅ Aprobado</option>
-                        <option value="Rechazado">❌ Rechazado</option>
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">IVA (%)</label>
-                        <select id="select-iva" onchange="renderPresupuesto()" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700">
-                            <option value="21">21% (General)</option>
-                            <option value="10">10% (Reducido)</option>
-                            <option value="4">4% (S. Reducido)</option>
-                            <option value="0">0% (Exento)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Dto (%)</label>
-                        <input type="number" id="input-descuento" oninput="renderPresupuesto()" value="0" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Anticipo (€)</label>
-                    <input type="number" id="input-anticipo" oninput="renderPresupuesto()" value="0" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 font-bold text-slate-700">
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">📝 Observaciones</label>
-                    <textarea id="input-notas" class="w-full p-3 border-none bg-slate-100 rounded-xl mt-1 text-sm" rows="3" placeholder="Añade notas..."></textarea>
-                </div>
-            </div>
-            <div id="desglose-precios" class="p-5 bg-white rounded-3xl border border-slate-200 mb-6 shadow-sm"></div>
-            <div class="bg-blue-600 text-white p-6 rounded-3xl shadow-xl flex justify-between items-center">
-                <div><p class="text-[10px] font-black uppercase opacity-80">Total con IVA</p></div>
-                <span id="total-final" class="text-3xl font-black">0.00€</span>
-            </div>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
-</body>
-</html>
+                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center"><span class="text-2xl mb-1">🧱</span><span class="text-[10px] font-bold">Tabiques</span></button>
+                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center"><span class="text-2xl mb-1">🏠</span><span class="text-[10px] font-bold">Techos</span></button>
+                <button onclick="abrirPrompt('cajones')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center"><span class="text-2xl mb-1">📦</span><span class="text-[10px] font-bold">Cajones</span></button>
+                <button onclick="abrirPrompt('tabicas')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center"><span class="text-2xl mb-1">📐</span><span class="text-[10px] font-bold">Tabicas</span></button>
