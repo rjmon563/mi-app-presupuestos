@@ -1,7 +1,11 @@
-// 1. CONFIGURACIÓN
+// 1. CONFIGURACIÓN COMPLETA
 const CONFIG = {
     'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
     'techos': { n: 'Techos', i: '🏠', uni: 'm²', esM2: true },
+    'cajones': { n: 'Cajones', i: '📦', uni: 'ml', esM2: false },
+    'tabicas': { n: 'Tabicas', i: '📐', uni: 'ml', esM2: false },
+    'cantoneras': { n: 'Cantoneras', i: '📏', uni: 'ml', esM2: false },
+    'horas': { n: 'Horas', i: '⏱️', uni: 'hrs', esM2: false },
     'placa13': { n: 'Placa de 13', i: '📄', uni: 'ud', esM2: false },
     'montante48': { n: 'Montante 48', i: '🏗️', uni: 'ud', esM2: false },
     'montante70': { n: 'Montante 70', i: '🏗️', uni: 'ud', esM2: false },
@@ -10,62 +14,55 @@ const CONFIG = {
     'tc48': { n: 'TC 48', i: '📏', uni: 'ud', esM2: false },
     'cuelgues': { n: 'Cuelgues', i: '⚓', uni: 'ud', esM2: false },
     'perfilU': { n: 'Perfil U', i: '📐', uni: 'ud', esM2: false },
-    'perfilClick': { n: 'Perfil Click', i: '🖱️', uni: 'ud', esM2: false },
-    'cajones': { n: 'Cajones', i: '📦', uni: 'ml', esM2: false },
-    'tabicas': { n: 'Tabicas', i: '📐', uni: 'ml', esM2: false },
-    'cantoneras': { n: 'Cantoneras', i: '📏', uni: 'ml', esM2: false },
-    'horas': { n: 'Horas', i: '⏱️', uni: 'hrs', esM2: false }
+    'perfilClick': { n: 'Perfil Click', i: '🖱️', uni: 'ud', esM2: false }
 };
 
-let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [] };
+let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [], contador: 1 };
 let clienteActual = null;
 let trabajoActual = { lineas: [], iva: 21, total: 0, lugar: "", fecha: "" };
 let editandoIndex = null;
 
-// --- FUNCIÓN DE BORRADO DE CLIENTE (REPARADA) ---
+// --- FUNCIÓN DE BORRADO REPARADA (ESTO ES LO QUE FALLABA) ---
 window.borrarCliente = function(id, event) {
-    // Evitamos que se abra la ficha del cliente al intentar borrar
+    // IMPORTANTE: Esto detiene el "click" para que no se abra el expediente
     if (event) {
         event.stopPropagation();
         event.preventDefault();
     }
     
-    if (confirm("¿Seguro que quieres borrar este cliente y todo su historial?")) {
+    if (confirm("¿Estás seguro de borrar este cliente y todos sus presupuestos?")) {
         db.clientes = db.clientes.filter(c => c.id !== id);
-        window.save();
-        window.renderListaClientes();
+        window.save(); // Guarda en memoria y repinta la lista
     }
 };
 
-// --- RENDERIZADO DE LA LISTA DE CLIENTES ---
 window.renderListaClientes = function() {
     const cont = document.getElementById('lista-clientes');
     if(!cont) return;
     
     if (db.clientes.length === 0) {
-        cont.innerHTML = `<div class="text-center p-10 text-slate-400 text-sm italic">No hay clientes guardados. Pulsa "+" para añadir uno.</div>`;
+        cont.innerHTML = "<p class='text-center text-slate-400 py-10'>No hay clientes todavía.</p>";
         return;
     }
 
     cont.innerHTML = db.clientes.map(c => `
-        <div onclick="window.abrirExpediente(${c.id})" class="bg-white p-4 rounded-2xl border mb-3 shadow-sm flex justify-between items-center active:bg-slate-50 transition-all">
-            <div class="flex-1">
-                <div class="font-black text-slate-800 text-lg uppercase tracking-tight">${c.nombre}</div>
-                <div class="text-[10px] text-slate-400 font-bold uppercase">${c.ciudad || 'Sin ciudad'}</div>
+        <div onclick="window.abrirExpediente(${c.id})" class="bg-white p-4 rounded-2xl border mb-3 shadow-sm flex justify-between items-center active:bg-slate-50 cursor-pointer">
+            <div>
+                <div class="font-black text-slate-800 text-lg uppercase">${c.nombre}</div>
+                <div class="text-[10px] text-slate-400 font-bold">${c.ciudad || ''} ${c.fiscal ? '· ' + c.fiscal : ''}</div>
             </div>
-            <button onclick="window.borrarCliente(${c.id}, event)" class="ml-4 bg-red-50 text-red-500 w-12 h-12 rounded-xl border border-red-100 flex items-center justify-center text-xl shadow-sm active:bg-red-500 active:text-white transition-colors">
+            <button onclick="window.borrarCliente(${c.id}, event)" class="bg-red-50 text-red-500 p-3 rounded-xl border border-red-100 active:bg-red-500 active:text-white transition-colors">
                 🗑️
             </button>
         </div>
     `).join('');
 };
 
-// --- GUARDADO ---
 window.save = function() {
     localStorage.setItem('presupro_v3', JSON.stringify(db));
+    window.renderListaClientes();
 };
 
-// --- NAVEGACIÓN ---
 window.irAPantalla = function(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
     const p = document.getElementById(`pantalla-${id}`);
@@ -89,45 +86,24 @@ window.abrirExpediente = function(id) {
 window.nuevoCliente = function() {
     const n = prompt("Nombre del Cliente:");
     if(!n) return;
+    const f = prompt("CIF/DNI:");
+    const d = prompt("Dirección:");
+    const c = prompt("Ciudad/Provincia:");
     db.clientes.push({
-        id: Date.now(), 
-        nombre: n, 
-        fiscal: prompt("CIF/DNI:") || "", 
-        direccion: prompt("Dirección:") || "", 
-        ciudad: prompt("Ciudad:") || "", 
-        presupuestos: []
+        id: Date.now(), nombre: n, fiscal: f || "", direccion: d || "", ciudad: c || "", presupuestos: []
     });
     window.save();
-    window.renderListaClientes();
 };
 
-// --- LÓGICA DE TRABAJO ---
-window.iniciarNuevaMedicion = function() {
-    const lugar = prompt("¿Nombre de la obra?");
-    if (!lugar) return;
-    editandoIndex = null;
-    trabajoActual = { lugar: lugar, fecha: new Date().toLocaleDateString(), lineas: [], iva: 21, total: 0 };
-    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
+window.modificarPresupuesto = function(index) {
+    const p = clienteActual.presupuestos[index];
+    if(!p) return;
+    trabajoActual = JSON.parse(JSON.stringify(p)); 
+    editandoIndex = index;
+    document.getElementById('num-presu-header').innerText = (trabajoActual.lugar || "OBRA").toUpperCase();
     window.irAPantalla('trabajo');
     window.cambiarVista('tecnico');
-};
-
-window.abrirPrompt = function(tipo) {
-    const conf = CONFIG[tipo];
-    const desc = prompt(`Descripción para ${conf.n}:`, "");
-    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
-    let cantidad = 0;
-    if(conf.esM2) {
-        const largo = (prompt("Largo (puedes sumar 5+2...):", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-        const alto = parseFloat(prompt("Alto:", "0")) || 0;
-        cantidad = largo * alto;
-    } else {
-        cantidad = parseFloat(prompt(`Cantidad de ${conf.n}:`, "0")) || 0;
-    }
-    if(cantidad > 0) {
-        trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n, descripcion: desc || "" });
-        window.renderListaMedidas();
-    }
+    setTimeout(() => { window.renderListaMedidas(); }, 100);
 };
 
 window.renderListaMedidas = function() {
@@ -156,15 +132,7 @@ window.renderListaMedidas = function() {
 window.quitarLinea = function(i) {
     trabajoActual.lineas.splice(i, 1);
     window.renderListaMedidas();
-};
-
-window.cambiarVista = function(v) {
-    document.querySelectorAll('.vista-trabajo').forEach(div => div.classList.add('hidden'));
-    document.getElementById(`vista-${v}`).classList.remove('hidden');
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-    document.getElementById(`tab-${v}`).classList.add('tab-active');
-    if(v === 'economico') window.renderPresupuesto();
-    if(v === 'tecnico') window.renderListaMedidas();
+    if(document.getElementById('vista-economico').classList.contains('hidden') === false) window.renderPresupuesto();
 };
 
 window.renderPresupuesto = function() {
@@ -175,12 +143,11 @@ window.renderPresupuesto = function() {
         <div class="text-[10px] font-bold text-slate-400 mb-2 uppercase italic">${trabajoActual.lugar}</div>
         ${trabajoActual.lineas.map(l => `
             <div class="border-b py-2">
-                <div class="flex justify-between text-xs font-bold uppercase">
+                <div class="flex justify-between text-xs font-bold">
                     <span>${l.icono} ${l.nombre}</span>
                     <span>${(l.cantidad*l.precio).toFixed(2)}€</span>
                 </div>
-                ${l.descripcion ? `<div class="text-[9px] text-slate-500 italic font-medium leading-tight">${l.descripcion}</div>` : ''}
-                <div class="text-[9px] text-slate-400">${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} x ${l.precio}€</div>
+                ${l.descripcion ? `<div class="text-[9px] text-slate-500 italic font-medium">${l.descripcion}</div>` : ''}
             </div>
         `).join('')}
     `;
@@ -198,15 +165,32 @@ window.guardarTodo = function() {
     window.irAPantalla('expediente');
 };
 
-window.modificarPresupuesto = function(index) {
-    const p = clienteActual.presupuestos[index];
-    if(!p) return;
-    trabajoActual = JSON.parse(JSON.stringify(p)); 
-    editandoIndex = index;
-    document.getElementById('num-presu-header').innerText = (trabajoActual.lugar || "OBRA").toUpperCase();
-    window.irAPantalla('trabajo');
-    window.cambiarVista('tecnico');
-    setTimeout(() => { window.renderListaMedidas(); }, 100);
+window.cambiarVista = function(v) {
+    document.querySelectorAll('.vista-trabajo').forEach(div => div.classList.add('hidden'));
+    document.getElementById(`vista-${v}`).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+    document.getElementById(`tab-${v}`).classList.add('tab-active');
+    if(v === 'economico') window.renderPresupuesto();
+    if(v === 'tecnico') window.renderListaMedidas();
+};
+
+window.abrirPrompt = function(tipo) {
+    const conf = CONFIG[tipo];
+    const desc = prompt(`Descripción para ${conf.n}:`, "");
+    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
+    let cantidad = 0;
+    if(conf.esM2) {
+        const largoStr = prompt("Largo (puedes sumar 5+2...):", "0") || "0";
+        const largo = largoStr.split('+').reduce((a, b) => a + Number(b), 0);
+        const alto = parseFloat(prompt("Alto:", "0")) || 0;
+        cantidad = largo * alto;
+    } else {
+        cantidad = parseFloat(prompt(`Cantidad de ${conf.n}:`, "0")) || 0;
+    }
+    if(cantidad > 0) {
+        trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n, descripcion: desc || "" });
+        window.renderListaMedidas();
+    }
 };
 
 window.renderHistorial = function() { 
@@ -236,6 +220,16 @@ window.borrarPresupuesto = function(index) {
         window.save();
         window.renderHistorial();
     }
+};
+
+window.iniciarNuevaMedicion = function() {
+    const lugar = prompt("¿Nombre de la obra?");
+    if (!lugar) return;
+    editandoIndex = null;
+    trabajoActual = { lugar: lugar, fecha: new Date().toLocaleDateString(), lineas: [], iva: 21, total: 0 };
+    document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
+    window.irAPantalla('trabajo');
+    window.cambiarVista('tecnico');
 };
 
 window.compartirWhatsApp = function(index) {
