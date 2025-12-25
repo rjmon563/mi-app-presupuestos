@@ -3,64 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>APP Presupuestos</title>
+    <title>PresuPro V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .hidden { display: none; }
-        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: bold; }
+        .hidden { display: none !important; }
+        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: 800; }
+        body { font-family: system-ui, -apple-system, sans-serif; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-50 antialiased">
 
     <div id="pantalla-clientes" class="max-w-md mx-auto min-h-screen">
-        <header class="p-4 bg-white border-b flex justify-between items-center sticky top-0">
-            <h1 class="font-black text-xl">APPpresupuestos</h1>
-            <button onclick="nuevoCliente()" class="bg-blue-600 text-white w-10 h-10 rounded-lg text-2xl">+</button>
+        <header class="p-6 bg-white border-b flex justify-between items-center sticky top-0 z-10">
+            <h1 class="font-black text-2xl tracking-tighter text-blue-600">APPpresupuestos</h1>
+            <button onclick="nuevoCliente()" class="bg-blue-600 text-white w-12 h-12 rounded-2xl shadow-lg font-bold text-2xl">+</button>
         </header>
         <div id="lista-clientes" class="p-4"></div>
     </div>
 
     <div id="pantalla-expediente" class="max-w-md mx-auto min-h-screen hidden">
-        <nav class="p-4 bg-white border-b flex items-center">
-            <button onclick="irAPantalla('clientes')" class="mr-4 text-xl">←</button>
-            <div id="titulo-cliente" class="font-bold"></div>
+        <nav class="p-6 bg-white border-b flex items-center sticky top-0 z-10">
+            <button onclick="irAPantalla('clientes')" class="mr-4 bg-slate-100 p-2 rounded-xl">←</button>
+            <div id="titulo-cliente" class="flex-1"></div>
         </nav>
-        <div class="p-4">
-            <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold mb-4">+ Nueva Obra</button>
+        <div class="p-6">
+            <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl mb-6">+ Nueva Obra</button>
             <div id="archivo-presupuestos"></div>
         </div>
     </div>
 
     <div id="pantalla-trabajo" class="max-w-md mx-auto min-h-screen hidden">
-        <header class="p-4 bg-white border-b flex justify-between items-center">
-            <button onclick="irAPantalla('expediente')">✕</button>
-            <div id="num-presu-header" class="font-bold">OBRA</div>
-            <button onclick="guardarTodo()" class="bg-green-600 text-white px-4 py-1 rounded">Guardar</button>
+        <header class="p-4 bg-white border-b flex justify-between items-center sticky top-0 z-10">
+            <button onclick="irAPantalla('expediente')" class="text-slate-400 font-bold">✕ Cancelar</button>
+            <div id="num-presu-header" class="font-black text-blue-600 uppercase text-xs"></div>
+            <button onclick="guardarTodo()" class="bg-emerald-500 text-white px-5 py-2 rounded-xl font-bold">GUARDAR</button>
         </header>
-        <div class="flex bg-white border-b">
-            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="flex-1 py-3 tab-active">Mediciones</button>
-            <button id="tab-economico" onclick="cambiarVista('economico')" class="flex-1 py-3">Presupuesto</button>
+        
+        <div class="flex bg-white border-b sticky top-[65px] z-10">
+            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="flex-1 py-4 font-black text-[10px] uppercase tab-active tab-btn">Mediciones</button>
+            <button id="tab-economico" onclick="cambiarVista('economico')" class="flex-1 py-4 font-black text-[10px] uppercase tab-btn">Presupuesto</button>
         </div>
-        <div id="vista-tecnico" class="p-4">
-            <div class="grid grid-cols-2 gap-2 mb-6">
-                <button onclick="abrirPrompt('tabiques')" class="bg-white p-3 border rounded">🧱 Tabiques</button>
-                <button onclick="abrirPrompt('techos')" class="bg-white p-3 border rounded">🏠 Techos</button>
-                <button onclick="abrirPrompt('cajones')" class="bg-white p-3 border rounded">📦 Cajones</button>
-                <button onclick="abrirPrompt('tabicas')" class="bg-white p-3 border rounded">📐 Tabicas</button>
-                <button onclick="abrirPrompt('cantoneras')" class="bg-white p-3 border rounded">📏 Cantoneras</button>
-                <button onclick="abrirPrompt('horas')" class="bg-white p-3 border rounded">⏱️ Horas</button>
-                <button onclick="abrirPrompt('placa13')" class="bg-blue-50 p-3 border rounded">📄 Placa 13</button>
-                <button onclick="abrirPrompt('montante48')" class="bg-blue-50 p-3 border rounded">🏗️ Mont. 48</button>
-                <button onclick="abrirPrompt('montante70')" class="bg-blue-50 p-3 border rounded">🏗️ Mont. 70</button>
-                <button onclick="abrirPrompt('canal48')" class="bg-blue-50 p-3 border rounded">🛤️ Canal 48</button>
-                <button onclick="abrirPrompt('canal70')" class="bg-blue-50 p-3 border rounded">🛤️ Canal 70</button>
-                <button onclick="abrirPrompt('tc48')" class="bg-blue-50 p-3 border rounded">📏 TC 48</button>
+
+        <div id="vista-tecnico" class="vista-trabajo p-6">
+            <div class="grid grid-cols-2 gap-3 mb-8">
+                <button onclick="abrirPrompt('tabiques')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">🧱 Tabiques</button>
+                <button onclick="abrirPrompt('techos')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">🏠 Techos</button>
+                <button onclick="abrirPrompt('cajones')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📦 Cajones</button>
+                <button onclick="abrirPrompt('tabicas')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📐 Tabicas</button>
+                <button onclick="abrirPrompt('cantoneras')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📏 Cantoneras</button>
+                <button onclick="abrirPrompt('horas')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">⏱️ Horas</button>
             </div>
             <div id="resumen-medidas-pantalla"></div>
         </div>
-        <div id="vista-economico" class="p-4 hidden">
-            <div id="desglose-precios" class="bg-white p-4 rounded border"></div>
-            <div class="mt-4 text-right font-black text-2xl text-blue-600">Total: <span id="total-final">0.00€</span></div>
+
+        <div id="vista-economico" class="vista-trabajo p-6 hidden">
+            <div id="desglose-precios" class="bg-white p-5 rounded-3xl border shadow-sm space-y-3"></div>
+            <div class="mt-6 p-6 bg-blue-600 rounded-3xl text-white flex justify-between items-center shadow-xl">
+                <span class="font-bold uppercase text-xs">Total con IVA</span>
+                <span id="total-final" class="font-black text-2xl">0.00€</span>
+            </div>
         </div>
     </div>
 
