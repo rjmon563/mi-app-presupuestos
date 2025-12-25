@@ -1,4 +1,4 @@
-// 1. CONFIGURACIÓN
+// 1. CONFIGURACIÓN DE TRABAJOS
 const CONFIG = {
     'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
     'techos': { n: 'Techos', i: '🏠', uni: 'm²', esM2: true },
@@ -10,18 +10,15 @@ const CONFIG = {
 
 let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [], contador: 1 };
 let clienteActual = null;
-let trabajoActual = { lineas: [], iva: 21, total: 0, lugar: "" };
+let trabajoActual = { lineas: [], iva: 21, total: 0, lugar: "", fecha: "" };
 let editandoIndex = null;
 
-// 2. NAVEGACIÓN Y GUARDADO
-window.save = function() {
-    localStorage.setItem('presupro_v3', JSON.stringify(db));
-    window.renderListaClientes();
-};
-
+// 2. MOTOR DE NAVEGACIÓN (REFORZADO)
 window.irAPantalla = function(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
-    document.getElementById(`pantalla-${id}`).classList.remove('hidden');
+    const pantalla = document.getElementById(`pantalla-${id}`);
+    if(pantalla) pantalla.classList.remove('hidden');
+    
     if(id === 'clientes') window.renderListaClientes();
 };
 
@@ -30,42 +27,62 @@ window.cambiarVista = function(v) {
     document.getElementById(`vista-${v}`).classList.remove('hidden');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
     document.getElementById(`tab-${v}`).classList.add('tab-active');
+    
     if(v === 'economico') window.renderPresupuesto();
     if(v === 'tecnico') window.renderListaMedidas();
 };
 
-// 3. GESTIÓN CLIENTES
+// 3. GESTIÓN DE CLIENTES (FICHA COMPLETA)
 window.nuevoCliente = function() {
-    const n = prompt("Nombre del cliente:");
-    if(n) {
-        db.clientes.push({id: Date.now(), nombre: n, presupuestos: []});
-        window.save();
-    }
-};
+    const nombre = prompt("Nombre del Cliente / Empresa:");
+    if(!nombre) return;
+    
+    const fiscal = prompt("CIF / DNI:");
+    const direccion = prompt("Dirección:");
+    const cp = prompt("Código Postal:");
+    const ciudad = prompt("Ciudad / Provincia:");
 
-window.borrarCliente = function(id, event) {
-    event.stopPropagation();
-    if(confirm("¿Borrar cliente y todo su historial?")) {
-        db.clientes = db.clientes.filter(c => c.id !== id);
-        window.save();
-    }
+    db.clientes.push({
+        id: Date.now(),
+        nombre: nombre,
+        fiscal: fiscal || "",
+        direccion: direccion || "",
+        cp: cp || "",
+        ciudad: ciudad || "",
+        presupuestos: []
+    });
+    window.save();
 };
 
 window.renderListaClientes = function() {
     const cont = document.getElementById('lista-clientes');
     if(!cont) return;
     cont.innerHTML = db.clientes.map(c => `
-        <div onclick="window.abrirExpediente(${c.id})" class="bg-white p-4 rounded-2xl border mb-3 shadow-sm flex justify-between items-center">
-            <div class="font-black text-slate-800">${c.nombre}</div>
-            <button onclick="window.borrarCliente(${c.id}, event)" class="text-red-400 p-2">🗑️</button>
+        <div onclick="window.abrirExpediente(${c.id})" class="bg-white p-4 rounded-2xl border mb-3 shadow-sm flex justify-between items-center active:bg-slate-50">
+            <div>
+                <div class="font-black text-slate-800">${c.nombre}</div>
+                <div class="text-[10px] text-slate-400 uppercase font-bold">${c.ciudad || 'Sin ciudad'}</div>
+            </div>
+            <span class="text-blue-500 font-bold">→</span>
         </div>
     `).join('');
 };
 
-// 4. HISTORIAL Y EDICIÓN (SOLUCIONADO)
+// 4. EXPEDIENTE (SOLUCIÓN AL NOMBRE DEL CLIENTE)
 window.abrirExpediente = function(id) { 
     clienteActual = db.clientes.find(c => c.id === id); 
-    document.getElementById('titulo-cliente').innerText = clienteActual.nombre; 
+    if(!clienteActual) return;
+
+    // Forzamos que el nombre aparezca en la cabecera de la segunda pantalla
+    const tituloHtml = `
+        <div class="text-lg font-black text-slate-800">${clienteActual.nombre}</div>
+        <div class="text-[9px] text-slate-500 leading-tight">
+            ${clienteActual.fiscal} | ${clienteActual.direccion}<br>
+            ${clienteActual.cp} ${clienteActual.ciudad}
+        </div>
+    `;
+    document.getElementById('titulo-cliente').innerHTML = tituloHtml; 
+    
     window.renderHistorial(); 
     window.irAPantalla('expediente'); 
 };
@@ -84,50 +101,47 @@ window.renderHistorial = function() {
             </div>
             <div class="grid grid-cols-2 gap-2 mt-3">
                 <button onclick="window.compartirWhatsApp(${index})" class="bg-green-500 text-white text-[10px] font-bold py-2 rounded-lg uppercase">WhatsApp</button>
-                <button onclick="window.modificarPresupuesto(${index})" class="bg-amber-500 text-white text-[10px] font-bold py-2 rounded-lg uppercase">✏️ EDITAR</button>
+                <button onclick="window.modificarPresupuesto(${index})" class="bg-amber-500 text-white text-[10px] font-bold py-2 rounded-lg uppercase">✏️ Editar</button>
                 <button onclick="window.enviarEmail(${index})" class="bg-blue-500 text-white text-[10px] font-bold py-2 rounded-lg uppercase">Email</button>
                 <button onclick="window.borrarPresupuesto(${index})" class="bg-red-50 text-red-500 py-2 rounded-lg text-[10px] font-bold uppercase">Borrar</button>
             </div>
         </div>`).reverse().join(''); 
 };
 
-// BOTÓN EDITAR SOLUCIONADO
+// 5. EDITAR PRESUPUESTO (REPARADO DEFINITIVO)
 window.modificarPresupuesto = function(index) {
     const p = clienteActual.presupuestos[index];
-    trabajoActual = JSON.parse(JSON.stringify(p)); // Carga datos
+    if(!p) return;
+
+    // Clonamos los datos para editar
+    trabajoActual = JSON.parse(JSON.stringify(p)); 
     editandoIndex = index;
 
+    // Actualizamos cabecera de edición
     document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
+    
+    // Cambiamos pantalla y forzamos render de medidas
     window.irAPantalla('trabajo');
-    window.cambiarVista('tecnico'); // Esto ya llama a renderListaMedidas()
+    window.cambiarVista('tecnico');
+    window.renderListaMedidas(); 
 };
 
-// 5. EDITOR Y MEDICIONES
+// 6. EDITOR Y MEDICIONES
 window.iniciarNuevaMedicion = function() {
-    const lugar = prompt("¿Lugar de la obra?");
+    const lugar = prompt("¿Nombre de la obra?");
     if (!lugar) return;
     editandoIndex = null;
-    trabajoActual = { lugar: lugar, fecha: new Date().toLocaleDateString(), lineas: [], iva: 21, total: 0 };
+    trabajoActual = { 
+        lugar: lugar, 
+        fecha: new Date().toLocaleDateString(), 
+        lineas: [], 
+        iva: 21, 
+        total: 0 
+    };
     document.getElementById('num-presu-header').innerText = trabajoActual.lugar.toUpperCase();
     window.irAPantalla('trabajo');
     window.cambiarVista('tecnico');
-};
-
-window.abrirPrompt = function(tipo) {
-    const conf = CONFIG[tipo];
-    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
-    let cantidad = 0;
-    if(conf.esM2) {
-        const largo = (prompt("Largo (suma 5+2...):", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
-        const alto = parseFloat(prompt("Alto:", "0")) || 0;
-        cantidad = largo * alto;
-    } else {
-        cantidad = parseFloat(prompt(`Cantidad de ${conf.n}:`, "0")) || 0;
-    }
-    if(cantidad > 0) {
-        trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n });
-        window.renderListaMedidas();
-    }
+    window.renderListaMedidas();
 };
 
 window.renderListaMedidas = function() {
@@ -140,7 +154,24 @@ window.renderListaMedidas = function() {
                 <span class="font-bold text-blue-600 text-sm">${(l.cantidad * l.precio).toFixed(2)}€</span>
                 <button onclick="window.quitarLinea(${i})" class="text-red-400 bg-red-50 p-1 rounded">✕</button>
             </div>
-        </div>`).join('') || "<p class='text-center text-slate-400 py-4 text-xs'>Sin metros</p>";
+        </div>`).join('') || "<p class='text-center text-slate-400 py-6 text-xs'>No hay mediciones</p>";
+};
+
+window.abrirPrompt = function(tipo) {
+    const conf = CONFIG[tipo];
+    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
+    let cantidad = 0;
+    if(conf.esM2) {
+        const largo = (prompt("Largo (puedes sumar 5+2...):", "0") || "0").split('+').reduce((a, b) => a + Number(b), 0);
+        const alto = parseFloat(prompt("Alto:", "0")) || 0;
+        cantidad = largo * alto;
+    } else {
+        cantidad = parseFloat(prompt(`Cantidad de ${conf.n}:`, "0")) || 0;
+    }
+    if(cantidad > 0) {
+        trabajoActual.lineas.push({ tipo, cantidad, precio, icono: conf.i, nombre: conf.n });
+        window.renderListaMedidas();
+    }
 };
 
 window.quitarLinea = function(i) {
@@ -151,9 +182,18 @@ window.quitarLinea = function(i) {
 window.renderPresupuesto = function() {
     let subtotal = 0;
     trabajoActual.lineas.forEach(l => subtotal += (l.cantidad * l.precio));
-    const ivaPct = parseFloat(document.getElementById('select-iva')?.value || 21);
+    const ivaPct = 21;
     const totalFinal = subtotal * (1 + ivaPct/100);
-    document.getElementById('desglose-precios').innerHTML = `<div class="text-xs font-bold">${trabajoActual.lugar}</div>` + trabajoActual.lineas.map(l => `<div class="flex justify-between text-xs border-b py-1"><span>${l.icono} ${l.nombre}</span><span>${(l.cantidad*l.precio).toFixed(2)}€</span></div>`).join('');
+    
+    document.getElementById('desglose-precios').innerHTML = `
+        <div class="text-[10px] font-bold text-slate-400 mb-2 uppercase">${trabajoActual.lugar}</div>
+        ${trabajoActual.lineas.map(l => `
+            <div class="flex justify-between text-xs border-b py-1">
+                <span>${l.icono} ${l.nombre}</span>
+                <span>${(l.cantidad*l.precio).toFixed(2)}€</span>
+            </div>
+        `).join('')}
+    `;
     document.getElementById('total-final').innerText = totalFinal.toFixed(2) + "€";
     trabajoActual.total = totalFinal;
 };
@@ -168,18 +208,28 @@ window.guardarTodo = function() {
     window.irAPantalla('expediente');
 };
 
-// 6. ENVÍOS
+window.save = function() {
+    localStorage.setItem('presupro_v3', JSON.stringify(db));
+    window.renderListaClientes();
+};
+
+// 7. ENVÍOS (WHATSAPP CON DATOS DEL CLIENTE)
 window.compartirWhatsApp = function(index) {
     const p = clienteActual.presupuestos[index];
     let msg = `*PRESUPUESTO: ${p.lugar.toUpperCase()}*\n`;
+    msg += `Cliente: ${clienteActual.nombre}\n`;
+    msg += `--------------------------\n`;
     p.lineas.forEach(l => msg += `${l.icono} ${l.nombre}: ${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} = ${(l.cantidad*l.precio).toFixed(2)}€\n`);
-    msg += `*TOTAL: ${parseFloat(p.total).toFixed(2)}€*`;
+    msg += `--------------------------\n`;
+    msg += `*TOTAL FINAL: ${parseFloat(p.total).toFixed(2)}€*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
 window.enviarEmail = function(index) {
     const p = clienteActual.presupuestos[index];
-    window.location.href = `mailto:?subject=Presupuesto&body=Presupuesto ${p.lugar}: ${p.total}€`;
+    const asunto = `Presupuesto ${p.lugar} - ${clienteActual.nombre}`;
+    const cuerpo = `Hola ${clienteActual.nombre},\n\nLe enviamos el presupuesto para ${p.lugar}.\nTotal: ${p.total}€\n\nSaludos.`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
 };
 
 window.borrarPresupuesto = function(index) {
