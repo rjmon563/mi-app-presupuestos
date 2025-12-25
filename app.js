@@ -1,7 +1,14 @@
-// 1. CONFIGURACIÓN AMPLIADA
+// 1. CONFIGURACIÓN COMPLETA (TRABAJOS + MATERIALES)
 const CONFIG = {
+    // TRABAJOS
     'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²', esM2: true },
     'techos': { n: 'Techos', i: '🏠', uni: 'm²', esM2: true },
+    'cajones': { n: 'Cajones', i: '📦', uni: 'ml', esM2: false },
+    'tabicas': { n: 'Tabicas', i: '📐', uni: 'ml', esM2: false },
+    'cantoneras': { n: 'Cantoneras', i: '📏', uni: 'ml', esM2: false },
+    'horas': { n: 'Horas', i: '⏱️', uni: 'hrs', esM2: false },
+    
+    // MATERIALES (NUEVA SECCIÓN)
     'placa13': { n: 'Placa de 13', i: '📄', uni: 'ud', esM2: false },
     'montante48': { n: 'Montante 48', i: '🏗️', uni: 'ud', esM2: false },
     'montante70': { n: 'Montante 70', i: '🏗️', uni: 'ud', esM2: false },
@@ -10,11 +17,7 @@ const CONFIG = {
     'tc48': { n: 'TC 48', i: '📏', uni: 'ud', esM2: false },
     'cuelgues': { n: 'Cuelgues', i: '⚓', uni: 'ud', esM2: false },
     'perfilU': { n: 'Perfil U', i: '📐', uni: 'ud', esM2: false },
-    'perfilClick': { n: 'Perfil Click', i: '🖱️', uni: 'ud', esM2: false },
-    'cajones': { n: 'Cajones', i: '📦', uni: 'ml', esM2: false },
-    'tabicas': { n: 'Tabicas', i: '📐', uni: 'ml', esM2: false },
-    'cantoneras': { n: 'Cantoneras', i: '📏', uni: 'ml', esM2: false },
-    'horas': { n: 'Horas', i: '⏱️', uni: 'hrs', esM2: false }
+    'perfilClick': { n: 'Perfil Click', i: '🖱️', uni: 'ud', esM2: false }
 };
 
 let db = JSON.parse(localStorage.getItem('presupro_v3')) || { clientes: [], contador: 1 };
@@ -22,7 +25,7 @@ let clienteActual = null;
 let trabajoActual = { lineas: [], iva: 21, total: 0, lugar: "", fecha: "" };
 let editandoIndex = null;
 
-// 2. NAVEGACIÓN
+// 2. MOTOR DE NAVEGACIÓN
 window.irAPantalla = function(id) {
     document.querySelectorAll('body > div').forEach(d => d.classList.add('hidden'));
     const p = document.getElementById(`pantalla-${id}`);
@@ -42,7 +45,7 @@ window.cambiarVista = function(v) {
     if(v === 'tecnico') window.renderListaMedidas();
 };
 
-// 3. CLIENTES
+// 3. GESTIÓN DE CLIENTES
 window.nuevoCliente = function() {
     const n = prompt("Nombre del Cliente:");
     if(!n) return;
@@ -77,7 +80,7 @@ window.borrarCliente = function(id, event) {
     }
 };
 
-// 4. EXPEDIENTE
+// 4. EXPEDIENTE Y TÍTULOS
 window.abrirExpediente = function(id) { 
     clienteActual = db.clientes.find(c => c.id === id); 
     if(!clienteActual) return;
@@ -140,11 +143,11 @@ window.iniciarNuevaMedicion = function() {
 window.abrirPrompt = function(tipo) {
     const conf = CONFIG[tipo];
     
-    // 1. Preguntamos descripción primero
-    const desc = prompt(`Descripción para ${conf.n} (Ej: con lana de roca, foseado, etc):`, "");
+    // 1. Descripción detallada
+    const desc = prompt(`Descripción para ${conf.n} (Ej: Marca, espesor, detalle):`, "");
     
-    // 2. Preguntamos precio
-    const precio = parseFloat(prompt(`Precio para ${conf.n}:`, "0")) || 0;
+    // 2. Precio
+    const precio = parseFloat(prompt(`Precio para ${conf.n} (${conf.uni}):`, "0")) || 0;
     
     let cantidad = 0;
     if(conf.esM2) {
@@ -152,7 +155,7 @@ window.abrirPrompt = function(tipo) {
         const alto = parseFloat(prompt("Alto:", "0")) || 0;
         cantidad = largo * alto;
     } else {
-        cantidad = parseFloat(prompt(`Cantidad de ${conf.n}:`, "0")) || 0;
+        cantidad = parseFloat(prompt(`Cantidad de ${conf.n} (${conf.uni}):`, "0")) || 0;
     }
 
     if(cantidad > 0) {
@@ -162,7 +165,7 @@ window.abrirPrompt = function(tipo) {
             precio, 
             icono: conf.i, 
             nombre: conf.n,
-            descripcion: desc || "" // Guardamos la descripción
+            descripcion: desc || ""
         });
         window.renderListaMedidas();
     }
@@ -179,7 +182,7 @@ window.renderListaMedidas = function() {
         <div class="bg-white p-3 rounded-xl border mb-2 shadow-sm">
             <div class="flex justify-between items-start">
                 <div class="text-xs">
-                    <span class="font-black text-slate-700">${l.icono} ${l.nombre}</span>
+                    <span class="font-black text-slate-700 uppercase">${l.icono} ${l.nombre}</span>
                     ${l.descripcion ? `<div class="text-[10px] text-blue-500 italic">${l.descripcion}</div>` : ''}
                     <div class="mt-1 text-slate-500">${l.cantidad.toFixed(2)}${CONFIG[l.tipo].uni} x ${l.precio}€</div>
                 </div>
@@ -191,15 +194,12 @@ window.renderListaMedidas = function() {
         </div>`).join('');
 };
 
-window.quitarLinea = function(i) {
-    trabajoActual.lineas.splice(i, 1);
-    window.renderListaMedidas();
-};
-
 window.renderPresupuesto = function() {
     let subtotal = 0;
     trabajoActual.lineas.forEach(l => subtotal += (l.cantidad * l.precio));
     const totalFinal = subtotal * 1.21;
+    document.getElementById('total-final').innerText = totalFinal.toFixed(2) + "€";
+    
     document.getElementById('desglose-precios').innerHTML = `
         <div class="text-[10px] font-bold text-slate-400 mb-2 uppercase italic">${trabajoActual.lugar}</div>
         ${trabajoActual.lineas.map(l => `
@@ -213,7 +213,6 @@ window.renderPresupuesto = function() {
             </div>
         `).join('')}
     `;
-    document.getElementById('total-final').innerText = totalFinal.toFixed(2) + "€";
     trabajoActual.total = totalFinal;
 };
 
