@@ -10,7 +10,6 @@
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: 900; }
         .hidden { display: none; }
-        button:active { transform: scale(0.95); }
     </style>
 </head>
 <body class="antialiased text-slate-900">
@@ -30,17 +29,15 @@
 
     <div id="pantalla-expediente" class="max-w-md mx-auto min-h-screen pb-24 hidden">
         <nav class="p-4 flex items-center bg-white border-b sticky top-0 z-10">
-            <button onclick="irAPantalla('clientes')" class="text-slate-400 font-bold mr-4 text-xl">←</button>
-            <div id="titulo-cliente" class="flex-1">
+            <button onclick="irAPantalla('clientes')" class="text-slate-400 font-bold mr-4 text-xl">← Volver</button>
+            <div id="titulo-cliente" class="flex-1 text-right">
                 </div>
         </nav>
 
         <div class="p-4">
-            <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-wide shadow-xl shadow-blue-100 mb-6">
+            <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-wide shadow-xl mb-6">
                 + Nueva Obra / Pedido
             </button>
-            
-            <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest px-1">Historial de Trabajos</h3>
             <div id="archivo-presupuestos">
                 </div>
         </div>
@@ -48,57 +45,52 @@
 
     <div id="pantalla-trabajo" class="max-w-md mx-auto min-h-screen pb-32 hidden">
         <header class="p-4 bg-white border-b flex justify-between items-center sticky top-0 z-10">
-            <button onclick="irAPantalla('expediente')" class="text-slate-400 font-bold text-xl font-black">✕</button>
-            <div id="num-presu-header" class="font-black text-sm uppercase tracking-widest">NUEVA OBRA</div>
+            <button onclick="irAPantalla('expediente')" class="text-slate-400 font-bold text-xl">✕</button>
+            <div id="num-presu-header" class="font-black text-sm uppercase tracking-widest text-blue-600">NUEVA OBRA</div>
             <button onclick="guardarTodo()" class="bg-green-500 text-white px-5 py-2 rounded-xl font-black text-xs uppercase">Guardar</button>
         </header>
 
         <div class="flex bg-white border-b sticky top-[61px] z-10">
-            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="flex-1 py-4 text-xs font-bold uppercase tracking-widest tab-active">Mediciones</button>
-            <button id="tab-economico" onclick="cambiarVista('economico')" class="flex-1 py-4 text-xs font-bold uppercase tracking-widest">Presupuesto</button>
+            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="tab-btn flex-1 py-4 text-xs font-bold uppercase tab-active">Mediciones</button>
+            <button id="tab-economico" onclick="cambiarVista('economico')" class="tab-btn flex-1 py-4 text-xs font-bold uppercase">Presupuesto</button>
         </div>
 
         <div id="vista-tecnico" class="p-4 vista-trabajo">
-            
             <div class="mb-6">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Trabajos y Mano de Obra</h3>
+                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest italic">Mano de Obra</h3>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="abrirPrompt('tabiques')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">🧱 Tabiques</button>
-                    <button onclick="abrirPrompt('techos')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">🏠 Techos</button>
-                    <button onclick="abrirPrompt('cajones')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">📦 Cajones</button>
-                    <button onclick="abrirPrompt('tabicas')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">📐 Tabicas</button>
-                    <button onclick="abrirPrompt('cantoneras')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">📏 Cantoneras</button>
-                    <button onclick="abrirPrompt('horas')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2">⏱️ Horas</button>
+                    <button onclick="abrirPrompt('tabiques')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">🧱 Tabiques</button>
+                    <button onclick="abrirPrompt('techos')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">🏠 Techos</button>
+                    <button onclick="abrirPrompt('cajones')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">📦 Cajones</button>
+                    <button onclick="abrirPrompt('tabicas')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">📐 Tabicas</button>
+                    <button onclick="abrirPrompt('cantoneras')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">📏 Cantoneras</button>
+                    <button onclick="abrirPrompt('horas')" class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-xs font-bold">⏱️ Horas</button>
                 </div>
             </div>
 
             <div class="mb-6">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Materiales / Pedidos</h3>
+                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest italic text-blue-500">Perfilería y Placas</h3>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="abrirPrompt('placa13')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">📄 Placa 13</button>
-                    <button onclick="abrirPrompt('montante48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🏗️ Mont. 48</button>
-                    <button onclick="abrirPrompt('montante70')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🏗️ Mont. 70</button>
-                    <button onclick="abrirPrompt('canal48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🛤️ Canal 48</button>
-                    <button onclick="abrirPrompt('canal70')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🛤️ Canal 70</button>
-                    <button onclick="abrirPrompt('tc48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">📏 TC 48</button>
-                    <button onclick="abrirPrompt('cuelgues')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">⚓ Cuelgues</button>
-                    <button onclick="abrirPrompt('perfilU')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">📐 Perfil U</button>
-                    <button onclick="abrirPrompt('perfilClick')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl shadow-sm text-sm font-bold flex items-center gap-2 text-blue-700">🖱️ Click</button>
+                    <button onclick="abrirPrompt('placa13')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">📄 Placa 13</button>
+                    <button onclick="abrirPrompt('montante48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">🏗️ Mont. 48</button>
+                    <button onclick="abrirPrompt('montante70')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">🏗️ Mont. 70</button>
+                    <button onclick="abrirPrompt('canal48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">🛤️ Canal 48</button>
+                    <button onclick="abrirPrompt('canal70')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">🛤️ Canal 70</button>
+                    <button onclick="abrirPrompt('tc48')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">📏 TC 48</button>
+                    <button onclick="abrirPrompt('cuelgues')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">⚓ Cuelgues</button>
+                    <button onclick="abrirPrompt('perfilU')" class="bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs font-bold">📐 Perfil U</button>
                 </div>
             </div>
 
-            <div id="resumen-medidas-pantalla" class="mt-4">
+            <div id="resumen-medidas-pantalla">
                 </div>
         </div>
 
-        <div id="vista-economico" class="p-6 hidden vista-trabajo">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border mb-6">
-                <div id="desglose-precios" class="space-y-4">
-                    </div>
-                <div class="border-t-2 border-dashed mt-6 pt-6 flex justify-between items-center">
-                    <span class="font-black text-slate-400 uppercase text-xs">Total con IVA</span>
-                    <span id="total-final" class="text-3xl font-black text-blue-600 tracking-tighter">0.00€</span>
-                </div>
+        <div id="vista-economico" class="p-4 hidden vista-trabajo">
+            <div id="desglose-precios" class="space-y-4"></div>
+            <div class="border-t-2 border-dashed mt-6 pt-6 flex justify-between items-center">
+                <span class="font-black text-slate-400 uppercase text-xs italic">Total + IVA</span>
+                <span id="total-final" class="text-3xl font-black text-blue-600 tracking-tighter">0.00€</span>
             </div>
         </div>
     </div>
