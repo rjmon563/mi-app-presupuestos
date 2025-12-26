@@ -1,4 +1,4 @@
-// --- 1. CONFIGURACIÓN BASE (BLOQUEADA) ---
+// --- 1. CONFIGURACIÓN BASE (LO QUE FUNCIONA NO SE TOCA) ---
 const CONFIG = {
     'tabiques': { n: 'Tabiques', i: '🧱', uni: 'm²' },
     'techos': { n: 'Techos', i: '🏠', uni: 'm²' },
@@ -28,13 +28,13 @@ window.cambiarVista = function(v) {
     if(v === 'economico') renderPresupuesto();
 };
 
-// --- 3. CALCULADORA INTELIGENTE (SIN CAMBIOS) ---
+// --- 3. CALCULADORA INTELIGENTE (BLOQUEADA) ---
 window.prepararMedida = function(tipo) {
     const p = prompt(`Precio para ${CONFIG[tipo].n}:`, "0");
     if(!p) return;
     let conc = (tipo === 'horas') ? 
-        prompt(`¿Qué días y qué trabajo? (Ej: 20/12 al 22/12 - Administración):`, "Administración") : 
-        prompt(`¿Qué trabajo se ha hecho? (Ej: Montaje, Encintado):`, "Montaje");
+        prompt(`Días y trabajo (Ej: 20/12 - Administración):`, "Administración") : 
+        prompt(`¿Qué has hecho? (Ej: Montaje, Encintado):`, "Montaje");
     calcEstado = { tipo: tipo, precio: parseFloat(p.replace(',','.')), valor: '', datos: {}, concepto: conc || "" };
     siguientePaso();
 };
@@ -42,12 +42,12 @@ window.prepararMedida = function(tipo) {
 function siguientePaso() {
     const t = calcEstado.tipo, d = calcEstado.datos;
     if (t === 'tabiques' || t === 'techos' || t === 'tabicas' || t === 'cajones') {
-        if (d.largo === undefined) { calcEstado.campo = 'largo'; abrirCalc(`LARGO (Suma con +)`); }
+        if (d.largo === undefined) { calcEstado.campo = 'largo'; abrirCalc(`LARGO (Láser +)`); }
         else if (d.segundo_dato === undefined) { 
             let txt = (t === 'techos' || t === 'tabicas') ? 'ANCHO' : (t === 'cajones' ? 'DESARROLLO' : 'ALTURA');
-            calcEstado.campo = 'segundo_dato'; abrirCalc(`${txt} (Suma con +)`); 
+            calcEstado.campo = 'segundo_dato'; abrirCalc(`${txt} (Láser +)`); 
         } else { finalizarMedicion(); }
-    } else { calcEstado.campo = 'total'; abrirCalc('TOTAL (Suma con +)'); }
+    } else { calcEstado.campo = 'total'; abrirCalc('TOTAL (Láser +)'); }
 }
 
 window.teclear = function(n) {
@@ -73,15 +73,17 @@ function finalizarMedicion() {
     }
 }
 
-// --- 4. GESTIÓN DE CLIENTES (AQUÍ ESTÁ LA PAPELERA) ---
+// --- 4. GESTIÓN DE CLIENTES (CORREGIDA: PAPELERA VISIBLE) ---
 window.renderListaClientes = function() {
     document.getElementById('lista-clientes').innerHTML = db.clientes.map((c, index) => `
-        <div class="flex gap-2 mb-3">
-            <div onclick="abrirExpediente(${c.id})" class="flex-1 bg-white p-5 rounded-3xl border font-black uppercase flex justify-between shadow-sm italic">
-                <span>${c.nombre}</span>
-                <span class="text-blue-500">➔</span>
+        <div class="flex items-center gap-2 mb-3 px-2">
+            <div onclick="abrirExpediente(${c.id})" class="flex-1 bg-white p-5 rounded-3xl border font-black uppercase flex justify-between shadow-sm italic overflow-hidden">
+                <span class="truncate">${c.nombre}</span>
+                <span class="text-blue-500 ml-2">➔</span>
             </div>
-            <button onclick="borrarCliente(${index})" class="bg-red-50 text-red-500 border border-red-100 px-4 rounded-3xl font-bold">🗑️</button>
+            <button onclick="borrarCliente(${index})" class="bg-red-50 text-red-500 border border-red-200 h-[64px] w-[60px] rounded-3xl flex items-center justify-center text-xl shadow-sm">
+                🗑️
+            </button>
         </div>`).join('');
 };
 
@@ -93,7 +95,7 @@ window.borrarCliente = function(index) {
     }
 };
 
-// --- 5. RENDERIZADOS Y PDF (BLINDADO) ---
+// --- 5. RENDERIZADOS, PDF Y FIRMA (BLINDADO) ---
 window.renderPresupuesto = function() {
     let sub = trabajoActual.lineas.reduce((acc, l) => acc + (l.cantidad * l.precio), 0);
     let totalIva = (sub - trabajoActual.descuento) * 1.21;
@@ -121,7 +123,7 @@ window.generarPDF = function(i) {
 // --- AUXILIARES (Lógica Blindada) ---
 window.abrirCalc = function(titulo) { document.getElementById('calc-titulo').innerText = titulo; document.getElementById('calc-display').innerText = ''; calcEstado.valor = ''; document.getElementById('modal-calc').classList.remove('hidden'); };
 window.cerrarCalc = function() { document.getElementById('modal-calc').classList.add('hidden'); };
-window.renderListaMedidas = function() { document.getElementById('resumen-medidas-pantalla').innerHTML = trabajoActual.lineas.map((l, i) => `<div class="flex justify-between items-center bg-white p-4 rounded-2xl border mb-3"><div><div class="text-xs font-black uppercase">${l.icono} ${l.nombre}</div><div class="text-[10px] text-slate-400">${l.cantidad.toFixed(2)} ${CONFIG[l.tipo].uni}</div></div><span class="font-black text-blue-600">${(l.cantidad * l.precio).toFixed(2)}€</span><button onclick="trabajoActual.lineas.splice(${i},1);renderListaMedidas();" class="ml-2 text-red-500 text-xl font-bold">✕</button></div>`).join(''); };
+window.renderListaMedidas = function() { document.getElementById('resumen-medidas-pantalla').innerHTML = trabajoActual.lineas.map((l, i) => `<div class="flex justify-between items-center bg-white p-4 rounded-2xl border mb-3 shadow-sm"><div><div class="text-xs font-black uppercase">${l.icono} ${l.nombre}</div><div class="text-[10px] text-slate-400">${l.cantidad.toFixed(2)} ${CONFIG[l.tipo].uni}</div></div><span class="font-black text-blue-600">${(l.cantidad * l.precio).toFixed(2)}€</span><button onclick="trabajoActual.lineas.splice(${i},1);renderListaMedidas();" class="ml-2 text-red-500 text-xl font-bold">✕</button></div>`).join(''); };
 window.save = function() { localStorage.setItem('presupro_v3', JSON.stringify(db)); };
 window.nuevoCliente = function() { const n = prompt("Nombre Cliente:"); if(n) { db.clientes.push({ id: Date.now(), nombre: n, presupuestos: [] }); save(); renderListaClientes(); } };
 window.abrirExpediente = function(id) { clienteActual = db.clientes.find(c => c.id === id); irAPantalla('expediente'); renderHistorial(); };
@@ -132,9 +134,10 @@ window.renderHistorial = function() {
     document.getElementById('archivo-presupuestos').innerHTML = (clienteActual.presupuestos || []).map((p, i) => `
         <div class="bg-white p-5 rounded-3xl border mb-4 shadow-sm border-l-8 border-l-blue-600"><div class="flex justify-between mb-4 font-black uppercase text-sm"><span>${p.lugar}</span><span class="text-blue-600">${p.total.toFixed(2)}€</span></div><div class="grid grid-cols-2 gap-2"><button onclick="generarPDF(${i})" class="bg-red-500 text-white py-2 rounded-xl text-[10px] font-black uppercase">PDF</button><button onclick="borrarPresu(${i})" class="bg-slate-100 text-slate-400 py-2 rounded-xl text-[10px] font-black uppercase">Borrar</button></div></div>`).reverse().join('');
 };
-window.borrarPresu = function(i) { if(confirm('¿Seguro?')) { clienteActual.presupuestos.splice(i,1); save(); renderHistorial(); } };
-let canvas, ctx, dibujando = false; // Declaradas para la firma
-window.abrirFirma = function() { /* (Código de firma mantenido igual) */ 
+window.borrarPresu = function(i) { if(confirm('¿Borrar?')) { clienteActual.presupuestos.splice(i,1); save(); renderHistorial(); } };
+
+let canvas, ctx, dibujando = false; 
+window.abrirFirma = function() {
     const fHTML = `<div id="modal-firma" class="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4"><div class="bg-white w-full max-w-sm rounded-3xl p-6"><h3 class="font-black mb-4 uppercase text-center">Firma Cliente</h3><canvas id="canvas-firma" class="border-2 border-dashed border-slate-300 w-full h-40 bg-slate-50 rounded-xl touch-none"></canvas><div class="grid grid-cols-2 gap-4 mt-6"><button onclick="document.getElementById('modal-firma').remove()" class="bg-slate-100 py-3 rounded-xl font-bold">VOLVER</button><button onclick="guardarFirma()" class="bg-blue-600 text-white py-3 rounded-xl font-bold">GUARDAR</button></div></div></div>`;
     document.body.insertAdjacentHTML('beforeend', fHTML); canvas = document.getElementById('canvas-firma'); ctx = canvas.getContext('2d'); canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
     canvas.ontouchstart = (e) => { dibujando = true; ctx.beginPath(); ctx.moveTo(e.touches[0].clientX - canvas.getBoundingClientRect().left, e.touches[0].clientY - canvas.getBoundingClientRect().top); };
