@@ -6,7 +6,98 @@
     <title>PresuPro V3 - Gold</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PresuPro V3 - Calculadora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
+        .hidden { display: none !important; }
+        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: 800; }
+        body { font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        .key { background: white; padding: 20px; border-radius: 15px; font-weight: 900; text-align: center; border: 1px solid #e2e8f0; font-size: 1.5rem; user-select: none; }
+        .key:active { background: #f1f5f9; transform: scale(0.95); }
+    </style>
+</head>
+<body class="bg-slate-50 antialiased">
+
+    <div id="pantalla-clientes" class="max-w-md mx-auto min-h-screen">
+        <header class="p-6 bg-white border-b flex justify-between items-center sticky top-0 z-10">
+            <h1 class="font-black text-2xl tracking-tighter text-blue-600">APPpresupuestos</h1>
+            <button onclick="nuevoCliente()" class="bg-blue-600 text-white w-12 h-12 rounded-2xl shadow-lg font-bold text-2xl">+</button>
+        </header>
+        <div id="lista-clientes" class="p-4"></div>
+    </div>
+
+    <div id="pantalla-expediente" class="max-w-md mx-auto min-h-screen hidden">
+        <nav class="p-6 bg-white border-b flex items-center sticky top-0 z-10">
+            <button onclick="irAPantalla('clientes')" class="mr-4 bg-slate-100 p-2 rounded-xl">←</button>
+            <div id="titulo-cliente" class="flex-1"></div>
+        </nav>
+        <div class="p-6">
+            <button onclick="iniciarNuevaMedicion()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl mb-6">+ Nueva Obra</button>
+            <div id="archivo-presupuestos"></div>
+        </div>
+    </div>
+
+    <div id="pantalla-trabajo" class="max-w-md mx-auto min-h-screen hidden">
+        <header class="p-4 bg-white border-b flex justify-between items-center sticky top-0 z-10">
+            <button onclick="irAPantalla('expediente')" class="text-slate-400 font-bold">✕ Salir</button>
+            <div id="num-presu-header" class="font-black text-blue-600 uppercase text-xs"></div>
+            <button onclick="guardarTodo()" class="bg-emerald-500 text-white px-5 py-2 rounded-xl font-bold">GUARDAR</button>
+        </header>
+        
+        <div class="flex bg-white border-b sticky top-[65px] z-10">
+            <button id="tab-tecnico" onclick="cambiarVista('tecnico')" class="flex-1 py-4 font-black text-[10px] uppercase tab-active tab-btn">Mediciones</button>
+            <button id="tab-economico" onclick="cambiarVista('economico')" class="flex-1 py-4 font-black text-[10px] uppercase tab-btn">Presupuesto</button>
+        </div>
+
+        <div id="vista-tecnico" class="vista-trabajo p-6">
+            <div class="grid grid-cols-2 gap-3 mb-8">
+                <button onclick="prepararMedida('tabiques')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">🧱 Tabiques</button>
+                <button onclick="prepararMedida('techos')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">🏠 Techos</button>
+                <button onclick="prepararMedida('cajones')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📦 Cajones</button>
+                <button onclick="prepararMedida('tabicas')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📐 Tabicas</button>
+                <button onclick="prepararMedida('cantoneras')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">📏 Cantoneras</button>
+                <button onclick="prepararMedida('horas')" class="bg-white p-4 rounded-2xl border font-bold text-left shadow-sm">⏱️ Horas</button>
+            </div>
+            <div id="resumen-medidas-pantalla"></div>
+        </div>
+
+        <div id="vista-economico" class="vista-trabajo p-6 hidden">
+            <div id="desglose-precios" class="bg-white p-5 rounded-3xl border shadow-sm space-y-3"></div>
+            <div class="mt-6 p-6 bg-blue-600 rounded-3xl text-white flex justify-between items-center shadow-xl">
+                <span class="font-bold uppercase text-xs">Total con IVA</span>
+                <span id="total-final" class="font-black text-2xl">0.00€</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-calc" class="fixed inset-0 bg-black/60 z-[100] flex items-end hidden">
+        <div class="bg-slate-100 w-full rounded-t-[40px] p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 px-2">
+                <h3 id="calc-titulo" class="font-black text-slate-800 uppercase text-sm tracking-widest">Medida</h3>
+                <button onclick="cerrarCalc()" class="bg-white px-4 py-2 rounded-xl text-slate-400 font-bold text-xs shadow-sm">CERRAR</button>
+            </div>
+            <div id="calc-display" class="bg-white p-6 rounded-2xl mb-4 text-right text-3xl font-black text-blue-600 border-2 border-blue-100 min-h-[80px] break-all"></div>
+            <div class="grid grid-cols-4 gap-2">
+                <div class="key" onclick="teclear('7')">7</div><div class="key" onclick="teclear('8')">8</div><div class="key" onclick="teclear('9')">9</div>
+                <div class="key bg-red-100 text-red-500" onclick="teclear('DEL')">←</div>
+                <div class="key" onclick="teclear('4')">4</div><div class="key" onclick="teclear('5')">5</div><div class="key" onclick="teclear('6')">6</div>
+                <div class="key bg-blue-600 text-white row-span-2 flex items-center justify-center text-4xl" onclick="teclear('+')">+</div>
+                <div class="key" onclick="teclear('1')">1</div><div class="key" onclick="teclear('2')">2</div><div class="key" onclick="teclear('3')">3</div>
+                <div class="key" onclick="teclear('0')">0</div><div class="key" onclick="teclear('.')">.</div>
+                <div class="key bg-emerald-500 text-white col-span-2 font-black" onclick="teclear('OK')">OK</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
         .hidden { display: none !important; }
         .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: 800; }
         body { font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -92,3 +183,4 @@
     <script src="app.js"></script>
 </body>
 </html>
+
